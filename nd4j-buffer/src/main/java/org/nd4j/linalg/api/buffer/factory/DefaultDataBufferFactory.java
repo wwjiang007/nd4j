@@ -27,10 +27,7 @@ import org.bytedeco.javacpp.indexer.DoubleIndexer;
 import org.bytedeco.javacpp.indexer.FloatIndexer;
 import org.bytedeco.javacpp.indexer.Indexer;
 import org.bytedeco.javacpp.indexer.IntIndexer;
-import org.nd4j.linalg.api.buffer.DataBuffer;
-import org.nd4j.linalg.api.buffer.DoubleBuffer;
-import org.nd4j.linalg.api.buffer.FloatBuffer;
-import org.nd4j.linalg.api.buffer.IntBuffer;
+import org.nd4j.linalg.api.buffer.*;
 import org.nd4j.linalg.api.memory.MemoryWorkspace;
 import org.nd4j.linalg.util.ArrayUtil;
 
@@ -78,145 +75,145 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
     }
 
     @Override
-    public DataBuffer createInt(int offset, ByteBuffer buffer, int length) {
+    public DataBuffer createInt(long offset, ByteBuffer buffer, int length) {
         return new IntBuffer(buffer, length, offset);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, ByteBuffer buffer, int length) {
+    public DataBuffer createFloat(long offset, ByteBuffer buffer, int length) {
         return new FloatBuffer(buffer, length, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, ByteBuffer buffer, int length) {
+    public DataBuffer createDouble(long offset, ByteBuffer buffer, int length) {
         return new DoubleBuffer(buffer, length, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, int length) {
+    public DataBuffer createDouble(long offset, int length) {
         return new DoubleBuffer(length, 8, offset);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, int length) {
+    public DataBuffer createFloat(long offset, int length) {
         return new FloatBuffer(length, 4, offset);
     }
 
     @Override
-    public DataBuffer createInt(int offset, int length) {
+    public DataBuffer createInt(long offset, int length) {
         return new IntBuffer(length, 4, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, int[] data) {
+    public DataBuffer createDouble(long offset, int[] data) {
         return createDouble(offset, data, true);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, int[] data) {
+    public DataBuffer createFloat(long offset, int[] data) {
         FloatBuffer ret = new FloatBuffer(ArrayUtil.toFloats(data), true, offset);
         return ret;
     }
 
     @Override
-    public DataBuffer createInt(int offset, int[] data) {
+    public DataBuffer createInt(long offset, int[] data) {
         return new IntBuffer(data, true, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, double[] data) {
+    public DataBuffer createDouble(long offset, double[] data) {
         return new DoubleBuffer(data, true, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, double[] data, MemoryWorkspace workspace) {
+    public DataBuffer createDouble(long offset, double[] data, MemoryWorkspace workspace) {
         return new DoubleBuffer(data, true, offset, workspace);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, byte[] data, int length) {
+    public DataBuffer createDouble(long offset, byte[] data, int length) {
         return createDouble(offset, ArrayUtil.toDoubleArray(data), true);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, byte[] data, int length) {
+    public DataBuffer createFloat(long offset, byte[] data, int length) {
         return createFloat(offset, ArrayUtil.toFloatArray(data), true);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, double[] data) {
+    public DataBuffer createFloat(long offset, double[] data) {
         return new FloatBuffer(ArrayUtil.toFloats(data), true, offset);
     }
 
     @Override
-    public DataBuffer createInt(int offset, double[] data) {
+    public DataBuffer createInt(long offset, double[] data) {
         return new IntBuffer(ArrayUtil.toInts(data), true, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, float[] data) {
+    public DataBuffer createDouble(long offset, float[] data) {
         return new DoubleBuffer(ArrayUtil.toDoubles(data), true, offset);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, float[] data) {
+    public DataBuffer createFloat(long offset, float[] data) {
         return new FloatBuffer(data, true, offset);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, float[] data, MemoryWorkspace workspace) {
+    public DataBuffer createFloat(long offset, float[] data, MemoryWorkspace workspace) {
         return new FloatBuffer(data, true, offset, workspace);
     }
 
     @Override
-    public DataBuffer createInt(int offset, float[] data) {
+    public DataBuffer createInt(long offset, float[] data) {
         return new IntBuffer(ArrayUtil.toInts(data), true, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, int[] data, boolean copy) {
+    public DataBuffer createDouble(long offset, int[] data, boolean copy) {
         return new DoubleBuffer(ArrayUtil.toDoubles(data), true, offset);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, int[] data, boolean copy) {
+    public DataBuffer createFloat(long offset, int[] data, boolean copy) {
         return new FloatBuffer(ArrayUtil.toFloats(data), copy, offset);
     }
 
     @Override
-    public DataBuffer createInt(int offset, int[] data, boolean copy) {
+    public DataBuffer createInt(long offset, int[] data, boolean copy) {
         return new IntBuffer(data, copy, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, double[] data, boolean copy) {
+    public DataBuffer createDouble(long offset, double[] data, boolean copy) {
         return new DoubleBuffer(data, copy, offset);
     }
 
     @Override
-    public DataBuffer createFloat(int offset, double[] data, boolean copy) {
+    public DataBuffer createFloat(long offset, double[] data, boolean copy) {
         return new FloatBuffer(ArrayUtil.toFloats(data), copy, offset);
     }
 
     @Override
-    public DataBuffer createInt(int offset, double[] data, boolean copy) {
+    public DataBuffer createInt(long offset, double[] data, boolean copy) {
         return new IntBuffer(ArrayUtil.toInts(data), copy, offset);
     }
 
     @Override
-    public DataBuffer createDouble(int offset, float[] data, boolean copy) {
+    public DataBuffer createDouble(long offset, float[] data, boolean copy) {
         return new DoubleBuffer(ArrayUtil.toDoubles(data), copy, offset);
     }
 
 
 
     @Override
-    public DataBuffer createFloat(int offset, float[] data, boolean copy) {
+    public DataBuffer createFloat(long offset, float[] data, boolean copy) {
         return new FloatBuffer(data, copy, offset);
     }
 
     @Override
-    public DataBuffer createInt(int offset, float[] data, boolean copy) {
+    public DataBuffer createInt(long offset, float[] data, boolean copy) {
         return new IntBuffer(ArrayUtil.toInts(data), copy, offset);
     }
 
@@ -271,6 +268,56 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
     }
 
     @Override
+    public DataBuffer createInt(long length, boolean initialize, MemoryWorkspace workspace) {
+        return new IntBuffer(length, initialize, workspace);
+    }
+
+    /**
+     * This method will create new DataBuffer of the same dataType & same length
+     *
+     * @param buffer
+     * @return
+     */
+    @Override
+    public DataBuffer createSame(DataBuffer buffer, boolean init) {
+        switch (buffer.dataType()) {
+            case INT:
+                return createInt(buffer.length(), init);
+            case FLOAT:
+                return createFloat(buffer.length(), init);
+            case DOUBLE:
+                return createDouble(buffer.length(), init);
+            case HALF:
+                return createHalf(buffer.length(), init);
+            default:
+                throw new UnsupportedOperationException("Unknown dataType: " + buffer.dataType());
+        }
+    }
+
+    /**
+     * This method will create new DataBuffer of the same dataType & same length
+     *
+     * @param buffer
+     * @param workspace
+     * @return
+     */
+    @Override
+    public DataBuffer createSame(DataBuffer buffer, boolean init, MemoryWorkspace workspace) {
+        switch (buffer.dataType()) {
+            case INT:
+                return createInt(buffer.length(), init, workspace);
+            case FLOAT:
+                return createFloat(buffer.length(), init, workspace);
+            case DOUBLE:
+                return createDouble(buffer.length(), init, workspace);
+            case HALF:
+                return createHalf(buffer.length(), init, workspace);
+            default:
+                throw new UnsupportedOperationException("Unknown dataType: " + buffer.dataType());
+        }
+    }
+
+    @Override
     public DataBuffer createDouble(int[] data) {
         return createDouble(data, true);
     }
@@ -283,6 +330,16 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
     @Override
     public DataBuffer createInt(int[] data) {
         return createInt(data, true);
+    }
+
+    @Override
+    public DataBuffer createInt(int[] data, MemoryWorkspace workspace) {
+        return createInt(data, true, workspace);
+    }
+
+    @Override
+    public DataBuffer createInt(int[] data, boolean copy, MemoryWorkspace workspace) {
+        return new IntBuffer(data, copy, workspace);
     }
 
     @Override
@@ -397,16 +454,16 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
 
     /**
      * Create a data buffer based on the
-     * given pointer, data buffer type,
+     * given pointer, data buffer opType,
      * and length of the buffer
      *
      * @param pointer the pointer to use
-     * @param type    the type of buffer
+     * @param type    the opType of buffer
      * @param length  the length of the buffer
      * @param indexer the indexer for the pointer
      * @return the data buffer
      * backed by this pointer with the given
-     * type and length.
+     * opType and length.
      */
     @Override
     public DataBuffer create(Pointer pointer, DataBuffer.Type type, long length, Indexer indexer) {
@@ -418,7 +475,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
             case FLOAT:
                 return new FloatBuffer(pointer, indexer, length);
         }
-        throw new IllegalArgumentException("Invalid type " + type);
+        throw new IllegalArgumentException("Invalid opType " + type);
     }
 
     /**
@@ -431,7 +488,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
         doublePointer.capacity(length);
         doublePointer.limit(length);
         doublePointer.position(0);
-        return new DoubleBuffer(doublePointer, DoubleIndexer.create(doublePointer),length);
+        return new DoubleBuffer(doublePointer, DoubleIndexer.create(doublePointer), length);
     }
 
     /**
@@ -444,7 +501,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
         intPointer.capacity(length);
         intPointer.limit(length);
         intPointer.position(0);
-        return new IntBuffer(intPointer, IntIndexer.create(intPointer),length);
+        return new IntBuffer(intPointer, IntIndexer.create(intPointer), length);
     }
 
     /**
@@ -457,7 +514,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
         floatPointer.capacity(length);
         floatPointer.limit(length);
         floatPointer.position(0);
-        return new FloatBuffer(floatPointer, FloatIndexer.create(floatPointer),length);
+        return new FloatBuffer(floatPointer, FloatIndexer.create(floatPointer), length);
     }
 
 
@@ -504,7 +561,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, double[] data, boolean copy) {
+    public DataBuffer createHalf(long offset, double[] data, boolean copy) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -517,7 +574,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, float[] data, boolean copy) {
+    public DataBuffer createHalf(long offset, float[] data, boolean copy) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -530,7 +587,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, int[] data, boolean copy) {
+    public DataBuffer createHalf(long offset, int[] data, boolean copy) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -542,7 +599,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, double[] data) {
+    public DataBuffer createHalf(long offset, double[] data) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -554,12 +611,12 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, float[] data) {
+    public DataBuffer createHalf(long offset, float[] data) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
     @Override
-    public DataBuffer createHalf(int offset, float[] data, MemoryWorkspace workspace) {
+    public DataBuffer createHalf(long offset, float[] data, MemoryWorkspace workspace) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -571,7 +628,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, int[] data) {
+    public DataBuffer createHalf(long offset, int[] data) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -584,7 +641,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, byte[] data, boolean copy) {
+    public DataBuffer createHalf(long offset, byte[] data, boolean copy) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -642,7 +699,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, byte[] data, int length) {
+    public DataBuffer createHalf(long offset, byte[] data, int length) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -654,7 +711,7 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
      * @return the new buffer
      */
     @Override
-    public DataBuffer createHalf(int offset, int length) {
+    public DataBuffer createHalf(long offset, int length) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
     }
 
@@ -695,5 +752,30 @@ public class DefaultDataBufferFactory implements DataBufferFactory {
     @Override
     public DataBuffer createHalf(float[] data, boolean copy, MemoryWorkspace workspace) {
         throw new UnsupportedOperationException("FP16 isn't supported for CPU yet");
+    }
+
+    @Override
+    public Class<? extends DataBuffer> intBufferClass() {
+        return IntBuffer.class;
+    }
+
+    @Override
+    public Class<? extends DataBuffer> longBufferClass() {
+        return LongBuffer.class;
+    }
+
+    @Override
+    public Class<? extends DataBuffer> halfBufferClass() {
+        return null;    //Not yet supported
+    }
+
+    @Override
+    public Class<? extends DataBuffer> floatBufferClass() {
+        return FloatBuffer.class;
+    }
+
+    @Override
+    public Class<? extends DataBuffer> doubleBufferClass() {
+        return DoubleBuffer.class;
     }
 }

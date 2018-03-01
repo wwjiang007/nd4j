@@ -19,13 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.api.ops.TransformOp;
-import org.nd4j.linalg.util.ComplexUtil;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Tanh elementwise function
@@ -33,6 +33,17 @@ import org.nd4j.linalg.util.ComplexUtil;
  * @author Adam Gibson
  */
 public class Tanh extends BaseTransformOp {
+    public Tanh(SameDiff sameDiff, SDVariable i_v, boolean inPlace) {
+        super(sameDiff, i_v, inPlace);
+    }
+
+    public Tanh(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+    }
+
+    public Tanh(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs) {
+        super(sameDiff, i_v, extraArgs);
+    }
 
     public Tanh() {}
 
@@ -62,74 +73,27 @@ public class Tanh extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "tanh";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return ComplexUtil.tanh(origin);
+    public String onnxName() {
+        return "Tanh";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return ComplexUtil.tanh(origin);
+    public String tensorflowName() {
+        return "Tanh";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return ComplexUtil.tanh(origin);
-    }
+
+
+
 
     @Override
-    public float op(float origin, float other) {
-        return (float) FastMath.tanh(origin);
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return FastMath.tanh(origin);
-    }
-
-    @Override
-    public double op(double origin) {
-        return FastMath.tanh(origin);
-    }
-
-    @Override
-    public float op(float origin) {
-        return (float) FastMath.tanh(origin);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return ComplexUtil.tanh(origin);
-    }
-
-    @Override
-    public TransformOp derivative() {
-        return new TanhDerivative(x, y, z, n);
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-        if (y() != null)
-            return new Tanh(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Tanh(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-        if (y() != null)
-            return new Tanh(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Tanh(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        SDVariable ret = f().tanhDerivative(arg(), i_v.get(0));
+        return Collections.singletonList(ret);
     }
 }

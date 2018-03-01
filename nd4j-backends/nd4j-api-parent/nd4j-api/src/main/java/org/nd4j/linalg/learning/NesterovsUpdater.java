@@ -69,12 +69,12 @@ public class NesterovsUpdater implements GradientUpdater<Nesterovs> {
      * @return
      */
     @Override
-    public void applyUpdater(INDArray gradient, int iteration) {
+    public void applyUpdater(INDArray gradient, int iteration, int epoch) {
         if (v == null)
             throw new IllegalStateException("Updater has not been initialized with view state");
 
-        double momentum = config.getMomentum();
-        double learningRate = config.getLearningRate();
+        double momentum = config.currentMomentum(iteration, epoch);
+        double learningRate = config.getLearningRate(iteration, epoch);
 
         //reference https://cs231n.github.io/neural-networks-3/#sgd 2nd equation
         //DL4J default is negative step function thus we flipped the signs:
@@ -83,13 +83,13 @@ public class NesterovsUpdater implements GradientUpdater<Nesterovs> {
 
         //v = mu * v - lr * gradient
         INDArray vPrev = v.dup(gradientReshapeOrder);
-        v.muli(momentum).subi(gradient.dup(gradientReshapeOrder).muli(learningRate));              //Modify state array in-place
+        v.muli(momentum).subi(gradient.dup(gradientReshapeOrder).muli(learningRate)); //Modify state array in-place
 
         /*
         Next line is equivalent to:
         INDArray ret = vPrev.muli(momentum).addi(v.mul(-momentum - 1));
         gradient.assign(ret);
         */
-        Nd4j.getExecutioner().exec(new AddOp(vPrev.muli(momentum), v.mul(-momentum - 1), gradient));
+        Nd4j.getExecutioner().exec(new AddOp(new INDArray[]{vPrev.muli(momentum), v.mul(-momentum - 1)}, new INDArray[]{gradient}));
     }
 }

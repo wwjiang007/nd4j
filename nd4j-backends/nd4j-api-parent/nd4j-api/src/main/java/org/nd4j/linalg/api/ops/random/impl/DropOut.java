@@ -20,8 +20,13 @@
 package org.nd4j.linalg.api.ops.random.impl;
 
 import lombok.NonNull;
+import org.nd4j.autodiff.samediff.SDVariable;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.random.BaseRandomOp;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Inverted DropOut implementation as Op
@@ -51,12 +56,19 @@ public class DropOut extends BaseRandomOp {
 
 
     @Override
+    public Map<String, Object> propertiesForFunction() {
+        Map<String,Object> ret = new LinkedHashMap<>();
+        ret.put("p",p);
+        return ret;
+    }
+
+    @Override
     public int opNum() {
         return 1;
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "dropout";
     }
 
@@ -64,5 +76,26 @@ public class DropOut extends BaseRandomOp {
     public void init(INDArray x, INDArray y, INDArray z, long n) {
         super.init(x, y, z, n);
         this.extraArgs = new Object[] {p, (double) n};
+    }
+
+
+    @Override
+    public String onnxName() {
+        return "Dropout";
+    }
+
+    @Override
+    public String tensorflowName() {
+        return opName();
+    }
+
+    @Override
+    public Type opType() {
+        return Type.RANDOM ;
+    }
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
 }

@@ -19,11 +19,14 @@
 
 package org.nd4j.linalg.api.ops.impl.scalar.comparison;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseScalarOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Return a binary (0 or 1) when less than
@@ -32,6 +35,13 @@ import org.nd4j.linalg.factory.Nd4j;
  * @author Adam Gibson
  */
 public class ScalarLessThanOrEqual extends BaseScalarOp {
+    public ScalarLessThanOrEqual(SameDiff sameDiff, SDVariable i_v, Number scalar) {
+        super(sameDiff, i_v, scalar);
+    }
+
+    public ScalarLessThanOrEqual(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace) {
+        super(sameDiff, i_v, scalar, inPlace);
+    }
 
     public ScalarLessThanOrEqual() {}
 
@@ -43,13 +53,7 @@ public class ScalarLessThanOrEqual extends BaseScalarOp {
         super(x, num);
     }
 
-    public ScalarLessThanOrEqual(INDArray x, INDArray y, INDArray z, long n, IComplexNumber num) {
-        super(x, y, z, n, num);
-    }
 
-    public ScalarLessThanOrEqual(INDArray x, IComplexNumber num) {
-        super(x, num);
-    }
 
     @Override
     public int opNum() {
@@ -57,72 +61,25 @@ public class ScalarLessThanOrEqual extends BaseScalarOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "lessthanorequal_scalar";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin.absoluteValue().doubleValue() <= num.doubleValue() ? Nd4j.createComplexNumber(1, 0)
-                        : Nd4j.createComplexNumber(0, 0);
+    public String onnxName() {
+        return "LessEqual";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin.absoluteValue().doubleValue() <= num.doubleValue() ? Nd4j.createComplexNumber(1, 0)
-                        : Nd4j.createComplexNumber(0, 0);
+    public String tensorflowName() {
+        return "less_equal";
     }
+
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin.absoluteValue().doubleValue() <= num.doubleValue() ? Nd4j.createComplexNumber(1, 0)
-                        : Nd4j.createComplexNumber(0, 0);
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        //Not continuously differentiable, but 0 gradient in most places
+        return Collections.singletonList(sameDiff.zerosLike(arg()));
     }
 
-    @Override
-    public float op(float origin, float other) {
-        return origin <= num.floatValue() ? 1 : 0;
-
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return origin <= num.floatValue() ? 1 : 0;
-
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin <= num.floatValue() ? 1 : 0;
-
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin <= num.floatValue() ? 1 : 0;
-
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin.absoluteValue().doubleValue() <= num.doubleValue() ? Nd4j.createComplexNumber(1, 0)
-                        : Nd4j.createComplexNumber(0, 0);
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        if (num != null)
-            return new ScalarLessThanOrEqual(x.vectorAlongDimension(index, dimension), num);
-        else
-            return new ScalarLessThanOrEqual(x.vectorAlongDimension(index, dimension), complexNumber);
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        if (num != null)
-            return new ScalarLessThanOrEqual(x.tensorAlongDimension(index, dimension), num);
-        else
-            return new ScalarLessThanOrEqual(x.tensorAlongDimension(index, dimension), complexNumber);
-    }
 }

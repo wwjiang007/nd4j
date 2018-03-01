@@ -1,6 +1,9 @@
 package org.nd4j.linalg.rng;
 
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.util.FastMath;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -13,10 +16,13 @@ import org.nd4j.linalg.api.buffer.util.DataTypeUtil;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.executioner.GridExecutioner;
 import org.nd4j.linalg.api.ops.impl.accum.MatchCondition;
+import org.nd4j.linalg.api.ops.impl.transforms.Log;
 import org.nd4j.linalg.api.ops.random.impl.*;
 import org.nd4j.linalg.api.rng.DefaultRandom;
 import org.nd4j.linalg.api.rng.Random;
+import org.nd4j.linalg.api.rng.distribution.Distribution;
 import org.nd4j.linalg.api.rng.distribution.impl.NormalDistribution;
+import org.nd4j.linalg.api.rng.distribution.impl.OrthogonalDistribution;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.factory.Nd4jBackend;
 import org.nd4j.linalg.indexing.BooleanIndexing;
@@ -58,13 +64,16 @@ public class RandomTests extends BaseNd4jTest {
     @Test
     public void testCrossBackendEquality1() throws Exception {
 
-        int[] shape = {1,12};
+        int[] shape = {1, 12};
         double mean = 0;
         double standardDeviation = 1.0;
-        INDArray exp = Nd4j.create(new double[]{0.3201344790670888, 1.5718323114821624, 2.3576019088920157, 0.011034205622299313, -1.6848556179688527, 0.05479720804200661, -0.3641108263800006, -0.04683796849808572, -0.7358251292982549, 1.3590746854410898, 0.6587930319509204, 0.13347446589944548});
+        INDArray exp = Nd4j.create(new double[] {0.3201344790670888, 1.5718323114821624, 2.3576019088920157,
+                        0.011034205622299313, -1.6848556179688527, 0.05479720804200661, -0.3641108263800006,
+                        -0.04683796849808572, -0.7358251292982549, 1.3590746854410898, 0.6587930319509204,
+                        0.13347446589944548});
         Nd4j.getRandom().setSeed(12345);
         INDArray arr = Nd4j.getExecutioner().exec(new GaussianDistribution(
-                Nd4j.createUninitialized(shape, Nd4j.order()), mean, standardDeviation), Nd4j.getRandom());
+                        Nd4j.createUninitialized(shape, Nd4j.order()), mean, standardDeviation), Nd4j.getRandom());
 
 
         assertEquals(exp, arr);
@@ -241,6 +250,26 @@ public class RandomTests extends BaseNd4jTest {
         assertEquals(z1, z2);
     }
 
+    @Test
+    public void testAlphaDropout1() throws Exception {
+        Random random1 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+        Random random2 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+
+        INDArray z1 = Nd4j.ones(300);
+        INDArray z2 = Nd4j.ones(300);
+        INDArray zDup = z1.dup();
+
+        AlphaDropOut op1 = new AlphaDropOut(z1, z1, 0.10, 0.3, 0.5, 0.7);
+        Nd4j.getExecutioner().exec(op1, random1);
+
+        AlphaDropOut op2 = new AlphaDropOut(z2, z2, 0.10, 0.3, 0.5, 0.7);
+        Nd4j.getExecutioner().exec(op2, random2);
+
+        assertNotEquals(zDup, z1);
+
+        assertEquals(z1, z2);
+    }
+
 
     @Test
     public void testGaussianDistribution1() throws Exception {
@@ -301,6 +330,76 @@ public class RandomTests extends BaseNd4jTest {
         assertNotEquals(z1, z3);
         assertNotEquals(z2, z4);
         assertNotEquals(z3, z4);
+    }
+
+    @Test
+    public void testGaussianDistribution3() throws Exception {
+        Random random1 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+        Random random2 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+
+        INDArray z1 = Nd4j.create(100000);
+        INDArray z2 = Nd4j.create(100000);
+
+        GaussianDistribution op1 = new GaussianDistribution(z1, 1.0, 1.0);
+        Nd4j.getExecutioner().exec(op1, random1);
+
+        GaussianDistribution op2 = new GaussianDistribution(z2, -1.0, 2.0);
+        Nd4j.getExecutioner().exec(op2, random2);
+
+
+        assertEquals(1.0, z1.meanNumber().doubleValue(), 0.01);
+        assertEquals(1.0, z1.stdNumber().doubleValue(), 0.01);
+
+        // check variance
+        assertEquals(-1.0, z2.meanNumber().doubleValue(), 0.01);
+        assertEquals(4.0, z2.varNumber().doubleValue(), 0.01);
+
+        assertNotEquals(z1, z2);
+    }
+
+    /**
+     * Uses a test of Gaussianity for testing the values out of GaussianDistribution
+     * See https://en.wikipedia.org/wiki/Anderson%E2%80%93Darling_test
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testAndersonDarling() throws Exception {
+
+        Random random1 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+        INDArray z1 = Nd4j.create(1000);
+
+        GaussianDistribution op1 = new GaussianDistribution(z1, 0.0, 1.0);
+        Nd4j.getExecutioner().exec(op1, random1);
+
+        int n = z1.length();
+        //using this just for the cdf
+        Distribution nd = new NormalDistribution(random1, 0.0, 1.0);
+        Nd4j.sort(z1, true);
+
+        System.out.println("Data for Anderson-Darling: " + z1);
+
+        for (int i = 0; i < n; i++) {
+
+            Double res = nd.cumulativeProbability(z1.getDouble(i));
+            assertTrue (res >= 0.0);
+            assertTrue (res <= 1.0);
+            // avoid overflow when taking log later.
+            if (res == 0) res = 0.0000001;
+            if (res == 1) res = 0.9999999;
+            z1.putScalar(i, res);
+        }
+
+        double A = 0.0;
+        for (int i = 0; i < n; i++) {
+
+            A -= (2*i+1) * (Math.log(z1.getDouble(i)) + Math.log(1-z1.getDouble(n - i - 1)));
+        }
+
+        A = A / n - n;
+        A *= (1 + 4.0/n - 25.0/(n*n));
+
+        assertTrue("Critical (max) value for 1000 points and confidence α = 0.0001 is 1.8692, received: "+ A, A < 1.8692);
     }
 
     @Test
@@ -522,6 +621,59 @@ public class RandomTests extends BaseNd4jTest {
         assertNotEquals(z1Dup, z1);
 
         assertEquals(z1, z2);
+
+
+    }
+
+
+    @Test
+    public void testBernoulliDistribution2() throws Exception {
+        Random random1 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+        Random random2 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+
+        INDArray z1 = Nd4j.zeros(20);
+        INDArray z2 = Nd4j.zeros(20);
+        INDArray z1Dup = Nd4j.zeros(20);
+        INDArray exp = Nd4j.create(new double[] {1.00, 0.00, 1.00, 0.00, 1.00, 1.00, 0.00, 1.00, 1.00, 0.00, 0.00, 0.00,
+                        1.00, 1.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00});
+
+        BernoulliDistribution op1 = new BernoulliDistribution(z1, 0.50);
+        BernoulliDistribution op2 = new BernoulliDistribution(z2, 0.50);
+
+        Nd4j.getExecutioner().exec(op1, random1);
+        Nd4j.getExecutioner().exec(op2, random2);
+
+        assertNotEquals(z1Dup, z1);
+
+        assertEquals(z1, z2);
+
+        assertEquals(exp, z1);
+    }
+
+
+    @Test
+    public void testBernoulliDistribution3() throws Exception {
+        Random random1 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+        Random random2 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+
+        INDArray prob = Nd4j.create(new double[] {1.0, 0.1, 0.2, 0.5, 1.0, 1.0, 0.3, 0.7, 0.34, 0.119});
+
+        INDArray z1 = Nd4j.zeros(10);
+        INDArray z2 = Nd4j.zeros(10);
+        INDArray z1Dup = Nd4j.zeros(10);
+        INDArray exp = Nd4j.create(new double[] {1.00, 0.00, 1.00, 0.00, 1.00, 1.00, 0.00, 1.00, 1.00, 0.00});
+
+        BernoulliDistribution op1 = new BernoulliDistribution(z1, prob);
+        BernoulliDistribution op2 = new BernoulliDistribution(z2, prob);
+
+        Nd4j.getExecutioner().exec(op1, random1);
+        Nd4j.getExecutioner().exec(op2, random2);
+
+        assertNotEquals(z1Dup, z1);
+
+        assertEquals(z1, z2);
+
+        assertEquals(exp, z1);
     }
 
 
@@ -547,7 +699,6 @@ public class RandomTests extends BaseNd4jTest {
         BooleanIndexing.and(z1, Conditions.lessThanOrEqual(5.0));
         BooleanIndexing.and(z1, Conditions.greaterThanOrEqual(0.0));
     }
-
 
     @Test
     public void testBinomialDistribution2() throws Exception {
@@ -1126,12 +1277,77 @@ public class RandomTests extends BaseNd4jTest {
     }
 
     @Test
+    public void testTruncatedNormal1() throws Exception {
+        Random random1 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+
+        INDArray z01 = Nd4j.create(10000000).assign(-119119d);
+        INDArray z02 = Nd4j.createUninitialized(z01.length());
+
+        TruncatedNormalDistribution distribution01 = new TruncatedNormalDistribution(z01, 0.0, 1.0);
+
+        long time1 = System.currentTimeMillis();
+        Nd4j.getExecutioner().exec(distribution01, random1);
+        long time2 = System.currentTimeMillis();
+
+        Nd4j.getExecutioner().exec(new GaussianDistribution( z02, 0.0, 1.0));
+        long time3 = System.currentTimeMillis();
+
+        log.info("Truncated: {} ms; Gaussian: {} ms", time2 - time1, time3 - time2);
+
+        for (int e = 0; e < z01.length(); e++) {
+            assertTrue("Value: " + z01.getDouble(e) + " at " + e,FastMath.abs(z01.getDouble(e)) <= 2.0);
+            assertNotEquals(-119119d, z01.getDouble(e), 1e-3);
+        }
+
+        assertEquals(0.0, z01.meanNumber().doubleValue(), 1e-3);
+    }
+
+    @Test
+    public void testLogNormal1() throws Exception {
+        Random random1 = Nd4j.getRandomFactory().getNewRandomInstance(119);
+
+        INDArray z01 = Nd4j.create(1000000);
+
+        JDKRandomGenerator rng = new JDKRandomGenerator();
+        rng.setSeed(119);
+
+        org.apache.commons.math3.distribution.LogNormalDistribution dst = new org.apache.commons.math3.distribution.LogNormalDistribution(rng, 0.0, 1.0);
+        double[] array = dst.sample(1000000);
+
+
+        double mean = 0.0;
+        for (double e: array) {
+            mean += e;
+        }
+        mean /= array.length;
+
+        LogNormalDistribution distribution01 = new LogNormalDistribution(z01, 0.0, 1.0);
+        Nd4j.getExecutioner().exec(distribution01, random1);
+
+        log.info("Java mean: {}; Native mean: {}", mean, z01.meanNumber().doubleValue());
+        assertEquals(mean, z01.meanNumber().doubleValue(), 1e-1);
+
+
+
+    }
+
+    @Test
     public void testLinspace2() throws Exception {
         INDArray res = Nd4j.linspace(1, 5, 5);
         INDArray exp = Nd4j.create(new double[] {1, 2, 3, 4, 5});
 
         assertEquals(exp, res);
 
+    }
+
+
+    @Test
+    public void testOrthogonalDistribution1() {
+        val dist = new OrthogonalDistribution(1.0);
+
+        val array = dist.sample(new int[] {6, 9});
+
+        log.info("Array: {}", array);
     }
 
     @Override

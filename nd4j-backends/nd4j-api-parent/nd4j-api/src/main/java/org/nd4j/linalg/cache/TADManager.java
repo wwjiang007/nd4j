@@ -1,6 +1,6 @@
 package org.nd4j.linalg.cache;
 
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 
@@ -31,4 +31,11 @@ public interface TADManager {
      * This method removes all cached shape buffers
      */
     void purgeBuffers();
+
+    /**
+     * This method returns memory used for cache, in bytes
+     * 
+     * @return
+     */
+    long getCachedBytes();
 }

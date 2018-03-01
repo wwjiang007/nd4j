@@ -19,10 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.scalar;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseScalarOp;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Scalar subtraction
@@ -41,16 +44,26 @@ public class ScalarSubtraction extends BaseScalarOp {
         super(x, num);
     }
 
-    public ScalarSubtraction(INDArray x, INDArray y, INDArray z, long n, IComplexNumber num) {
-        super(x, y, z, n, num);
-    }
 
-    public ScalarSubtraction(INDArray x, IComplexNumber num) {
-        super(x, num);
-    }
 
     public ScalarSubtraction(INDArray x) {
         this(x, 0);
+    }
+
+    public ScalarSubtraction(SameDiff sameDiff, SDVariable i_v, Number scalar) {
+        super(sameDiff, i_v, scalar);
+    }
+
+    public ScalarSubtraction(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace) {
+        super(sameDiff, i_v, scalar, inPlace);
+    }
+
+    public ScalarSubtraction(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, scalar, inPlace, extraArgs);
+    }
+
+    public ScalarSubtraction(SameDiff sameDiff, SDVariable i_v, Number scalar, Object[] extraArgs) {
+        super(sameDiff, i_v, scalar, extraArgs);
     }
 
     @Override
@@ -59,71 +72,27 @@ public class ScalarSubtraction extends BaseScalarOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "sub_scalar";
     }
 
+
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        if (complexNumber != null)
-            return origin.sub(complexNumber);
-        return complexNumber.sub(num);
+    public String onnxName() {
+        return "Sub";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        if (complexNumber != null)
-            return origin.sub(complexNumber);
-        return complexNumber.sub(num);
+    public String tensorflowName() {
+        return "RealSub";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        if (complexNumber != null)
-            return origin.sub(complexNumber);
-        return complexNumber.sub(num);
-    }
+
 
     @Override
-    public float op(float origin, float other) {
-        return (origin - num.floatValue());
-    }
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        SDVariable g = i_v1.get(0);
 
-    @Override
-    public double op(double origin, double other) {
-        return origin - num.doubleValue();
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin - num.doubleValue();
-    }
-
-    @Override
-    public float op(float origin) {
-        return (origin - num.floatValue());
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        if (complexNumber != null)
-            return origin.sub(complexNumber);
-        return complexNumber.sub(num);
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        if (num != null)
-            return new ScalarSubtraction(x.vectorAlongDimension(index, dimension), num);
-        else
-            return new ScalarSubtraction(x.vectorAlongDimension(index, dimension), complexNumber);
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        if (num != null)
-            return new ScalarSubtraction(x.tensorAlongDimension(index, dimension), num);
-        else
-            return new ScalarSubtraction(x.tensorAlongDimension(index, dimension), complexNumber);
+        return Arrays.asList(g);
     }
 }

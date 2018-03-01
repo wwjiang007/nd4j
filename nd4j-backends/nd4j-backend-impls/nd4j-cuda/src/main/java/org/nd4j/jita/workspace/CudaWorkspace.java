@@ -7,9 +7,7 @@ import org.nd4j.jita.allocator.impl.AllocationShape;
 import org.nd4j.jita.allocator.impl.AtomicAllocator;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
-import org.nd4j.linalg.api.memory.enums.MemoryKind;
-import org.nd4j.linalg.api.memory.enums.ResetPolicy;
-import org.nd4j.linalg.api.memory.enums.SpillPolicy;
+import org.nd4j.linalg.api.memory.enums.*;
 import org.nd4j.linalg.api.memory.pointers.PagedPointer;
 import org.nd4j.linalg.api.memory.pointers.PointersPair;
 import org.nd4j.linalg.api.ops.executioner.GridExecutioner;
@@ -43,6 +41,10 @@ public class CudaWorkspace extends Nd4jWorkspace {
 
     @Override
     protected void init() {
+        if (workspaceConfiguration.getPolicyLocation() == LocationPolicy.MMAP) {
+            throw new ND4JIllegalStateException("CUDA do not support MMAP workspaces yet");
+        }
+
         super.init();
 
         if (currentSize.get() > 0) {
@@ -64,8 +66,8 @@ public class CudaWorkspace extends Nd4jWorkspace {
 
             workspace.setHostPointer(new PagedPointer(ptr));
 
-
-            workspace.setDevicePointer(new PagedPointer(memoryManager.allocate((bytes + SAFETY_OFFSET), MemoryKind.DEVICE, false)));
+            if (workspaceConfiguration.getPolicyMirroring() != MirroringPolicy.HOST_ONLY)
+                workspace.setDevicePointer(new PagedPointer(memoryManager.allocate((bytes + SAFETY_OFFSET), MemoryKind.DEVICE, false)));
 
             //log.info("Workspace [{}] initialized successfully", id);
         }
@@ -103,7 +105,6 @@ public class CudaWorkspace extends Nd4jWorkspace {
     public PagedPointer alloc(long requiredMemory, MemoryKind kind, DataBuffer.Type type, boolean initialize) {
         long numElements = requiredMemory / Nd4j.sizeOfDataType(type);
 
-
         if (!isUsed.get()) {
             if (disabledCounter.incrementAndGet() % 10 == 0)
                 log.warn("Worskpace was turned off, and wasn't enabled after {} allocations", disabledCounter.get());
@@ -138,6 +139,9 @@ public class CudaWorkspace extends Nd4jWorkspace {
                 cycleAllocations.addAndGet(requiredMemory);
                 long prevOffset = deviceOffset.getAndAdd(requiredMemory);
 
+                if (workspaceConfiguration.getPolicyMirroring() == MirroringPolicy.HOST_ONLY)
+                    return null;
+
                 PagedPointer ptr = workspace.getDevicePointer().withOffset(prevOffset, numElements);
 
                 if (isDebug.get())
@@ -158,6 +162,7 @@ public class CudaWorkspace extends Nd4jWorkspace {
 
                 return ptr;
             } else {
+
                 // spill
                 if (workspaceConfiguration.getPolicyReset() == ResetPolicy.ENDOFBUFFER_REACHED && currentSize.get() > 0 && !trimmer) {
                     //log.info("End of space reached. Current offset: {}; requiredMemory: {}", deviceOffset.get(), requiredMemory);
@@ -176,13 +181,16 @@ public class CudaWorkspace extends Nd4jWorkspace {
                 }
                 //Nd4j.getWorkspaceManager().printAllocationStatisticsForCurrentThread();
 
-
                 AllocationShape shape = new AllocationShape(requiredMemory / Nd4j.sizeOfDataType(type), Nd4j.sizeOfDataType(type), type);
+
+                cycleAllocations.addAndGet(requiredMemory);
+
+                if (workspaceConfiguration.getPolicyMirroring() == MirroringPolicy.HOST_ONLY)
+                    return null;
 
                 switch (workspaceConfiguration.getPolicySpill()) {
                     case REALLOCATE:
                     case EXTERNAL:
-                        cycleAllocations.addAndGet(requiredMemory);
                         if (!trimmer) {
                             externalCount.incrementAndGet();
                             //

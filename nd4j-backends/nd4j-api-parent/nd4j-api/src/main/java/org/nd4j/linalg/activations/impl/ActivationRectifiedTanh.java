@@ -2,13 +2,11 @@ package org.nd4j.linalg.activations.impl;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.activations.BaseActivationFunction;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.impl.transforms.RationalTanh;
-import org.nd4j.linalg.api.ops.impl.transforms.RationalTanhDerivative;
 import org.nd4j.linalg.api.ops.impl.transforms.RectifiedTanh;
-import org.nd4j.linalg.api.ops.impl.transforms.RectifiedTanhDerivative;
+import org.nd4j.linalg.api.ops.impl.transforms.gradient.RectifiedTanhDerivative;
 import org.nd4j.linalg.factory.Nd4j;
 
 /**

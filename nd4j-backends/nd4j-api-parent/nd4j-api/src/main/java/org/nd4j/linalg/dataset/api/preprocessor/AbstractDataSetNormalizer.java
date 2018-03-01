@@ -65,12 +65,10 @@ public abstract class AbstractDataSetNormalizer<S extends NormalizerStats> exten
     }
 
     protected S getFeatureStats() {
-        assertIsFit();
         return featureStats;
     }
 
     protected S getLabelStats() {
-        assertIsFit();
         return labelStats;
     }
 

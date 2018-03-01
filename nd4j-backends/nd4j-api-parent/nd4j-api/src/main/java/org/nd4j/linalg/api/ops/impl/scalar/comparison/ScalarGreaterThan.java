@@ -19,11 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.scalar.comparison;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseScalarOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Return a binary (0 or 1) when greater than a number
@@ -33,6 +35,22 @@ import org.nd4j.linalg.factory.Nd4j;
 public class ScalarGreaterThan extends BaseScalarOp {
     public ScalarGreaterThan() {}
 
+    public ScalarGreaterThan(SameDiff sameDiff, SDVariable i_v, Number scalar) {
+        super(sameDiff, i_v, scalar);
+    }
+
+    public ScalarGreaterThan(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace) {
+        super(sameDiff, i_v, scalar, inPlace);
+    }
+
+    public ScalarGreaterThan(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, scalar, inPlace, extraArgs);
+    }
+
+    public ScalarGreaterThan(SameDiff sameDiff, SDVariable i_v, Number scalar, Object[] extraArgs) {
+        super(sameDiff, i_v, scalar, extraArgs);
+    }
+
     public ScalarGreaterThan(INDArray x, INDArray y, INDArray z, long n, Number num) {
         super(x, y, z, n, num);
     }
@@ -41,13 +59,7 @@ public class ScalarGreaterThan extends BaseScalarOp {
         super(x, num);
     }
 
-    public ScalarGreaterThan(INDArray x, INDArray y, INDArray z, long n, IComplexNumber num) {
-        super(x, y, z, n, num);
-    }
 
-    public ScalarGreaterThan(INDArray x, IComplexNumber num) {
-        super(x, num);
-    }
 
     @Override
     public int opNum() {
@@ -55,70 +67,27 @@ public class ScalarGreaterThan extends BaseScalarOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "greaterthan_scalar";
     }
 
+
+
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin.absoluteValue().doubleValue() > num.doubleValue() ? Nd4j.createComplexNumber(1, 0)
-                        : Nd4j.createComplexNumber(0, 0);
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        //Not continuously differentiable, but 0 gradient in most places
+        return Collections.singletonList(sameDiff.zerosLike(arg()));
+    }
+
+
+    @Override
+    public String onnxName() {
+        return "Greater";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin.absoluteValue().doubleValue() > num.doubleValue() ? Nd4j.createComplexNumber(1, 0)
-                        : Nd4j.createComplexNumber(0, 0);
+    public String tensorflowName() {
+        return "greater";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin.absoluteValue().doubleValue() > num.doubleValue() ? Nd4j.createComplexNumber(1, 0)
-                        : Nd4j.createComplexNumber(0, 0);
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return origin > num.floatValue() ? 1 : 0;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return origin > num.doubleValue() ? 1 : 0;
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin > num.doubleValue() ? 1 : 0;
-
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin > num.floatValue() ? 1 : 0;
-
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin.absoluteValue().doubleValue() > num.doubleValue() ? Nd4j.createComplexNumber(1, 0)
-                        : Nd4j.createComplexNumber(0, 0);
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        if (num != null)
-            return new ScalarGreaterThan(x.vectorAlongDimension(index, dimension), num);
-        else
-            return new ScalarGreaterThan(x.vectorAlongDimension(index, dimension), complexNumber);
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        if (num != null)
-            return new ScalarGreaterThan(x.tensorAlongDimension(index, dimension), num);
-        else
-            return new ScalarGreaterThan(x.tensorAlongDimension(index, dimension), complexNumber);
-    }
 }

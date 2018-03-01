@@ -19,12 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.accum;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.util.ArrayUtil;
+import org.nd4j.linalg.api.shape.Shape;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Standard deviation (sqrt of variance)
@@ -32,8 +33,20 @@ import org.nd4j.linalg.util.ArrayUtil;
  * @author Adam Gibson
  */
 public class StandardDeviation extends Variance {
+    public StandardDeviation(SameDiff sameDiff, SDVariable i_v, int[] dimensions, boolean biasCorrected) {
+        super(sameDiff, i_v, dimensions, biasCorrected);
+    }
+
+    public StandardDeviation(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions, boolean biasCorrected) {
+        super(sameDiff, i_v, i_v2, dimensions, biasCorrected);
+    }
+
     public StandardDeviation(INDArray x, boolean biasCorrected) {
         super(x, biasCorrected);
+    }
+
+    public StandardDeviation(INDArray x, INDArray y, INDArray z, long n, boolean biasCorrected) {
+        super(x, y, z, n, biasCorrected);
     }
 
     public StandardDeviation() {}
@@ -56,83 +69,35 @@ public class StandardDeviation extends Variance {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "std";
     }
 
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new StandardDeviation(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            xAlongDimension.length());
-        else
-            return new StandardDeviation(xAlongDimension);
-
-    }
 
     @Override
-    public Variance opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        //Here: calculating dL/dIn given dL/dOut (i.e., i_v1) and input/output
+        //If out = stdev(in) then:
+        //dL/dIn = dL/dOut * dOut/dIn
+        //dOut/dIn_i = (in_i-mean)/(stdev * (n-1))
+        int origRank = Shape.rankFromShape(arg().getShape());
+        int n = f().getReductionLength(this);
+        SDVariable broadcastableStdevOut = f().reductionBroadcastableWithOrigShape(origRank, dimensions, outputVariables()[0]);
+        SDVariable broadcastableMean = f().reductionBroadcastableWithOrigShape(origRank, dimensions, f().mean(arg(), dimensions));
+        SDVariable diff = arg().sub(broadcastableMean);
 
-        if (y() != null)
-            return new StandardDeviation(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            xAlongDimension.length());
-        else
-            return new StandardDeviation(xAlongDimension);
-    }
-
-    @Override
-    public void exec() {
-        super.exec(); //variance = sqrt(stdev) -> sqrt is done in getAndSetFinalResult(...)
-    }
-
-    @Override
-    public void exec(int... dimension) {
-        if (dimension.length == 1 && dimension[0] == Integer.MAX_VALUE) {
-            exec();
-            this.z = Nd4j.scalar(this.finalResult);
-            return;
+        SDVariable dOutdIn = diff.div(broadcastableStdevOut);
+        if(this.biasCorrected){
+            dOutdIn = dOutdIn.div(n-1);
+        } else {
+            dOutdIn = dOutdIn.div(n);
         }
 
-        int[] retShape = ArrayUtil.removeIndex(x.shape(), dimension);
-        int nOps = x.tensorssAlongDimension(dimension);
-        z = Nd4j.create(retShape);
-        for (int i = 0; i < nOps; i++) {
-            double d = Nd4j.getExecutioner().execAndReturn(opForDimension(i, dimension)).getFinalResult().doubleValue();
-            z.putScalar(i, d);
-        }
+
+        SDVariable broadcastableGrad = f().reductionBroadcastableWithOrigShape(origRank, dimensions, i_v1.get(0));
+
+        SDVariable dLdIn = dOutdIn.mul(broadcastableGrad);
+        return Collections.singletonList(dLdIn);
     }
 
-    @Override
-    public double getAndSetFinalResult(double accum) {
-        //stdev is sqrt of variance:
-        double d = FastMath.sqrt(super.getAndSetFinalResult(accum));
-        this.finalResult = d;
-        return d;
-    }
-
-    @Override
-    public float getAndSetFinalResult(float accum) {
-        float f = (float) FastMath.sqrt(super.getAndSetFinalResult(accum));
-        this.finalResult = f;
-        return f;
-    }
-
-    @Override
-    public IComplexNumber getAndSetFinalResult(IComplexNumber accum) {
-        finalResultComplex = super.getAndSetFinalResult(accum).sqrt();
-        return finalResultComplex;
-    }
-
-    @Override
-    public double calculateFinalResult(double accum, long n) {
-        return FastMath.sqrt(super.calculateFinalResult(accum, n));
-    }
-
-    @Override
-    public float calculateFinalResult(float accum, long n) {
-        return (float) FastMath.sqrt(super.calculateFinalResult(accum, n));
-    }
 }

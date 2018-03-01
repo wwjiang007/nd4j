@@ -153,6 +153,10 @@ public class CudaZeroHandler implements MemoryHandler {
         for (int i = 0; i < numDevices; i++) {
             deviceAllocations.add(new ConcurrentHashMap<Long, Long>());
         }
+
+        if (NativeOpsHolder.getInstance().getDeviceNativeOps().getDeviceMajor(new CudaPointer(0)) < 3) {
+            throw new ND4JIllegalStateException("CUDA backend requires compute capatibility of 3.0 and above to run.");
+        }
     }
 
     /**
@@ -925,8 +929,7 @@ public class CudaZeroHandler implements MemoryHandler {
         } else {
             //                log.info("Free relocateObject: deviceId: {}, pointer: {}", deviceId, dstPoint.getPointers().getDevicePointer().address());
             memoryProvider.free(dstPoint);
-            deviceMemoryTracker.subFromAllocation(Thread.currentThread().getId(), dstPoint.getDeviceId(),
-                            AllocationUtils.getRequiredMemory(dstPoint.getShape()));
+            deviceMemoryTracker.subFromAllocation(Thread.currentThread().getId(), dstPoint.getDeviceId(), AllocationUtils.getRequiredMemory(dstPoint.getShape()));
 
             // we replace original device pointer with new one
             alloc(AllocationStatus.DEVICE, dstPoint, dstPoint.getShape(), false);
@@ -1114,7 +1117,7 @@ public class CudaZeroHandler implements MemoryHandler {
         if (!deviceAllocations.get(deviceId).containsKey(objectId))
             throw new IllegalStateException("Can't happen ever");
 
-        deviceAllocations.get(deviceId).remove(objectId);
+        forget(point, AllocationStatus.DEVICE);
 
         if (deviceAllocations.get(deviceId).containsKey(objectId))
             throw new IllegalStateException("Can't happen ever");
@@ -1135,7 +1138,7 @@ public class CudaZeroHandler implements MemoryHandler {
      */
     @Override
     public void purgeZeroObject(Long bucketId, Long objectId, AllocationPoint point, boolean copyback) {
-        zeroAllocations.get(bucketId).remove(objectId);
+        forget(point, AllocationStatus.HOST);
 
         flowController.waitTillReleased(point);
 
@@ -1147,6 +1150,15 @@ public class CudaZeroHandler implements MemoryHandler {
 
         long reqMem = AllocationUtils.getRequiredMemory(point.getShape()) * -1;
         zeroUseCounter.addAndGet(reqMem);
+    }
+
+    @Override
+    public void forget(AllocationPoint point, AllocationStatus location) {
+        if (location == AllocationStatus.DEVICE) {
+            deviceAllocations.get(point.getDeviceId()).remove(point.getObjectId());
+        } else if (location == AllocationStatus.HOST) {
+            zeroAllocations.get(point.getBucketId()).remove(point.getObjectId());
+        }
     }
 
 

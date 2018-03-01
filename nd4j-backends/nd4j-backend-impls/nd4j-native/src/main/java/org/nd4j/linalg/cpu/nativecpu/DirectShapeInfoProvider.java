@@ -1,6 +1,7 @@
 package org.nd4j.linalg.cpu.nativecpu;
 
 import lombok.extern.slf4j.Slf4j;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.BaseShapeInfoProvider;
 import org.nd4j.linalg.api.shape.ShapeDescriptor;
@@ -14,12 +15,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 public class DirectShapeInfoProvider extends BaseShapeInfoProvider {
-    private Map<ShapeDescriptor, DataBuffer> shapeCache = new ConcurrentHashMap<>();
+    private Map<ShapeDescriptor, Pair<DataBuffer, int[]>> shapeCache = new ConcurrentHashMap<>();
     private AtomicInteger counter = new AtomicInteger(0);
-    private static final int MAX_ENTRIES = 100;
+    private static final int MAX_ENTRIES = 1000;
 
     @Override
-    public DataBuffer createShapeInformation(int[] shape, int[] stride, int offset, int elementWiseStride, char order) {
+    public Pair<DataBuffer, int[]> createShapeInformation(int[] shape, int[] stride, long offset, int elementWiseStride, char order) {
 
         // We enforce offset to 0 in shapeBuffer, since we need it for cache efficiency + we don't actually use offset value @ native side
         offset = 0;
@@ -30,9 +31,11 @@ public class DirectShapeInfoProvider extends BaseShapeInfoProvider {
                 synchronized (this) {
                     if (!shapeCache.containsKey(descriptor)) {
                         counter.incrementAndGet();
-                        DataBuffer buffer =
+                        Pair<DataBuffer, int[]> buffer =
                                         super.createShapeInformation(shape, stride, offset, elementWiseStride, order);
                         shapeCache.put(descriptor, buffer);
+
+                        bytes.addAndGet(buffer.getFirst().length() * 4 * 2);
 
                         return buffer;
                     } else

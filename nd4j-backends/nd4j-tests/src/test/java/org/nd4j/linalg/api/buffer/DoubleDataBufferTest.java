@@ -29,6 +29,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.nd4j.linalg.BaseNd4jTest;
 import org.nd4j.linalg.api.buffer.util.DataTypeUtil;
+import org.nd4j.linalg.api.memory.MemoryWorkspace;
+import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
+import org.nd4j.linalg.api.memory.enums.AllocationPolicy;
+import org.nd4j.linalg.api.memory.enums.LearningPolicy;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.factory.Nd4jBackend;
@@ -38,11 +42,12 @@ import java.io.*;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Double data buffer tests
  *
- * This tests the double buffer data type
+ * This tests the double buffer data opType
  * Put all buffer related tests here
  *
  * @author Adam Gibson
@@ -174,7 +179,6 @@ public class DoubleDataBufferTest extends BaseNd4jTest {
 
     }
 
-
     @Test
     public void testGetOffsetRange() throws Exception {
         DataBuffer buffer = Nd4j.linspace(1, 5, 5).data();
@@ -212,7 +216,32 @@ public class DoubleDataBufferTest extends BaseNd4jTest {
 
     }
 
+    @Test
+    public void testReallocation() {
+        DataBuffer buffer = Nd4j.createBuffer(new double[] {1, 2, 3, 4});
+        assertEquals(4, buffer.capacity());
+        double[] old = buffer.asDouble();
+        buffer.reallocate(6);
+        assertEquals(6, buffer.capacity());
+        assertArrayEquals(old, buffer.asDouble(), 1e-1);
+    }
 
+    @Test
+    public void testReallocationWorkspace() {
+        WorkspaceConfiguration initialConfig = WorkspaceConfiguration.builder().initialSize(10 * 1024L * 1024L)
+                        .policyAllocation(AllocationPolicy.STRICT).policyLearning(LearningPolicy.NONE).build();
+        MemoryWorkspace workspace = Nd4j.getWorkspaceManager().getAndActivateWorkspace(initialConfig, "SOME_ID");
+
+        DataBuffer buffer = Nd4j.createBuffer(new double[] {1, 2, 3, 4});
+        double[] old = buffer.asDouble();
+        assertTrue(buffer.isAttached());
+        assertEquals(4, buffer.capacity());
+        buffer.reallocate(6);
+        assertEquals(6, buffer.capacity());
+        assertArrayEquals(old, buffer.asDouble(), 1e-1);
+        workspace.close();
+
+    }
 
     @Override
     public char ordering() {

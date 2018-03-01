@@ -1,8 +1,14 @@
 package org.nd4j.linalg.api.ops.random.impl;
 
 import lombok.NonNull;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.random.BaseRandomOp;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This Op generates normal distribution over provided mean and stddev
@@ -65,13 +71,40 @@ public class GaussianDistribution extends BaseRandomOp {
         return 6;
     }
 
+
     @Override
-    public String name() {
+    public Map<String, Object> propertiesForFunction() {
+        Map<String,Object> ret = new LinkedHashMap<>();
+        ret.put("mean",mean);
+        ret.put("stddev",stddev);
+        return ret;
+    }
+
+
+    @Override
+    public String opName() {
         return "distribution_gaussian";
     }
 
     @Override
     public boolean isExecSpecial() {
         return true;
+    }
+
+    @Override
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
+    }
+
+    @Override
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
+    }
+
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
 }

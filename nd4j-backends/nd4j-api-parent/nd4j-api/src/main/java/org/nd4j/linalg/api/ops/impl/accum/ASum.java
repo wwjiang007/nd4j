@@ -19,10 +19,14 @@
 
 package org.nd4j.linalg.api.ops.impl.accum;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.functions.DifferentialFunction;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseAccumulation;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.List;
 
 /**
  * Absolute sum the components
@@ -30,6 +34,13 @@ import org.nd4j.linalg.api.ops.Op;
  * @author raver119@gmail.com
  */
 public class ASum extends BaseAccumulation {
+    public ASum(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public ASum(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
 
     public ASum() {}
 
@@ -49,51 +60,6 @@ public class ASum extends BaseAccumulation {
         super(x, y);
     }
 
-    @Override
-    public double update(double accum, double x) {
-        return accum + x;
-    }
-
-    @Override
-    public double update(double accum, double x, double y) {
-        return accum + x;
-    }
-
-    @Override
-    public float update(float accum, float x) {
-        return accum + x;
-    }
-
-    @Override
-    public float update(float accum, float x, float y) {
-        return accum + x;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x, double y) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, IComplexNumber y) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, double y) {
-        return accum.add(x);
-    }
-
 
     @Override
     public int opNum() {
@@ -101,48 +67,29 @@ public class ASum extends BaseAccumulation {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "asum";
     }
 
+
+
     @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
         return null;
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return null;
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return null;
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return null;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new ASum(xAlongDimension, y.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new ASum(xAlongDimension);
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new ASum(xAlongDimension, y.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new ASum(xAlongDimension);
+    public Type getOpType() {
+        return Type.REDUCE;
     }
 }

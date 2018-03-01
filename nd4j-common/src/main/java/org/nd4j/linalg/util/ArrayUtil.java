@@ -19,6 +19,7 @@
 
 package org.nd4j.linalg.util;
 
+import com.google.common.base.Preconditions;
 import com.google.common.primitives.Ints;
 import org.apache.commons.lang3.RandomUtils;
 
@@ -36,6 +37,87 @@ public class ArrayUtil {
 
 
     private ArrayUtil() {}
+
+
+    /**
+     * Returns true if any array elements are negative.
+     * If the array is null, it returns false
+     * @param arr the array to test
+     * @return
+     */
+    public static boolean containsAnyNegative(int[] arr) {
+        if(arr == null)
+            return false;
+
+        for(int i = 0; i < arr.length; i++) {
+            if(arr[i] < 0)
+                return true;
+        }
+        return false;
+    }
+
+    /**
+     *
+     * @param arrs
+     * @param check
+     * @return
+     */
+    public static boolean anyLargerThan(int[] arrs, int check) {
+        for(int i = 0; i < arrs.length; i++) {
+            if(arrs[i] > check)
+                return true;
+        }
+
+        return false;
+    }
+
+
+    /**
+     *
+     * @param arrs
+     * @param check
+     * @return
+     */
+    public static boolean anyLessThan(int[] arrs, int check) {
+        for(int i = 0; i < arrs.length; i++) {
+            if(arrs[i] < check)
+                return true;
+        }
+
+        return false;
+    }
+
+
+    /**
+     * Convert a int array to a string array
+     * @param arr the array to convert
+     * @return the equivalent string array
+     */
+    public static String[] convertToString(int[] arr) {
+        Preconditions.checkNotNull(arr);
+        String[] ret = new String[arr.length];
+        for(int i = 0; i < arr.length; i++) {
+            ret[i] = String.valueOf(arr[i]);
+        }
+
+        return ret;
+    }
+
+
+    /**
+     * Proper comparison contains for list of int
+     * arrays
+     * @param list the to search
+     * @param target the target int array
+     * @return whether the given target
+     * array is contained in the list
+     */
+    public static boolean listOfIntsContains(List<int[]> list,int[] target) {
+        for(int[] arr : list)
+            if(Arrays.equals(target,arr))
+                return true;
+        return false;
+    }
 
     /**
      * Repeat a value n times
@@ -93,6 +175,14 @@ public class ArrayUtil {
         }
 
         return result;
+    }
+
+    public static short toHalf(float data) {
+        return fromFloat(data);
+    }
+
+    public static short toHalf(double data) {
+        return fromFloat((float) data);
     }
 
     public static short[] toHalfs(float[] data) {
@@ -169,6 +259,17 @@ public class ArrayUtil {
         return retVal;
     }
 
+
+    public static int[] mod(int[] input,int mod) {
+        int[] ret = new int[input.length];
+        for(int i = 0; i < ret.length; i++) {
+            ret[i]  = input[i] % mod;
+        }
+
+        return ret;
+    }
+
+
     /**
      * Calculate the offset for a given stride array
      * @param stride the stride to use
@@ -214,6 +315,15 @@ public class ArrayUtil {
         return ret;
     }
 
+    public static long sumLong(long... add) {
+        if (add.length < 1)
+            return 0;
+        int ret = 0;
+        for (int i = 0; i < add.length; i++)
+            ret += add[i];
+        return ret;
+    }
+
     /**
      * Product of an int array
      * @param mult the elements
@@ -226,6 +336,23 @@ public class ArrayUtil {
         int ret = 1;
         for (int i = 0; i < mult.size(); i++)
             ret *= mult.get(i);
+        return ret;
+    }
+
+
+
+    /**
+     * Product of an int array
+     * @param mult the elements
+     *            to calculate the sum for
+     * @return the product of this array
+     */
+    public static int prod(long... mult) {
+        if (mult.length < 1)
+            return 0;
+        int ret = 1;
+        for (int i = 0; i < mult.length; i++)
+            ret *= mult[i];
         return ret;
     }
 
@@ -276,6 +403,15 @@ public class ArrayUtil {
         return ret;
     }
 
+    public static long prodLong(long... mult) {
+        if (mult.length < 1)
+            return 0;
+        long ret = 1;
+        for (int i = 0; i < mult.length; i++)
+            ret *= mult[i];
+        return ret;
+    }
+
     public static boolean equals(float[] data, double[] data2) {
         if (data.length != data2.length)
             return false;
@@ -310,6 +446,14 @@ public class ArrayUtil {
         return false;
     }
 
+    public static boolean isZero(long[] as) {
+        for (int i = 0; i < as.length; i++) {
+            if (as[i] == 0L)
+                return true;
+        }
+        return false;
+    }
+
     public static boolean anyMore(int[] target, int[] test) {
         assert target.length == test.length : "Unable to compare: different sizes";
         for (int i = 0; i < target.length; i++) {
@@ -325,6 +469,28 @@ public class ArrayUtil {
         for (int i = 0; i < target.length; i++) {
             if (target[i] < test[i])
                 return true;
+        }
+        return false;
+    }
+
+    public static boolean lessThan(int[] target, int[] test) {
+        assert target.length == test.length : "Unable to compare: different sizes";
+        for (int i = 0; i < target.length; i++) {
+            if (target[i] < test[i])
+                return true;
+            if (target[i] > test[i])
+                return false;
+        }
+        return false;
+    }
+
+    public static boolean greaterThan(int[] target, int[] test) {
+        assert target.length == test.length : "Unable to compare: different sizes";
+        for (int i = 0; i < target.length; i++) {
+            if (target[i] > test[i])
+                return true;
+            if (target[i] < test[i])
+                return false;
         }
         return false;
     }
@@ -386,6 +552,23 @@ public class ArrayUtil {
      * @return the offset for the given shape,offset,and strides
      */
     public static long calcOffsetLong(List<Integer> shape, List<Integer> offsets, List<Integer> strides) {
+        if (shape.size() != offsets.size() || shape.size() != strides.size())
+            throw new IllegalArgumentException("Shapes,strides, and offsets must be the same size");
+        long ret = 0;
+        for (int i = 0; i < offsets.size(); i++) {
+            //we should only do this in the general case, not on vectors
+            //the reason for this is we force everything including scalars
+            //to be 2d
+            if (shape.get(i) == 1 && offsets.size() > 2 && i > 0)
+                continue;
+            ret += (long) offsets.get(i) * strides.get(i);
+        }
+
+        return ret;
+    }
+
+
+    public static long calcOffsetLong2(List<Long> shape, List<Long> offsets, List<Long> strides) {
         if (shape.size() != offsets.size() || shape.size() != strides.size())
             throw new IllegalArgumentException("Shapes,strides, and offsets must be the same size");
         long ret = 0;
@@ -487,6 +670,25 @@ public class ArrayUtil {
      * @param ys
      * @return
      */
+    public static long dotProductLong2(List<Long> xs, List<Long> ys) {
+        long result = 0;
+        int n = xs.size();
+
+        if (ys.size() != n)
+            throw new IllegalArgumentException("Different array sizes");
+
+        for (int i = 0; i < n; i++) {
+            result += (long) xs.get(i) * ys.get(i);
+        }
+        return result;
+    }
+
+    /**
+     *
+     * @param xs
+     * @param ys
+     * @return
+     */
     public static long dotProductLong(int[] xs, int[] ys) {
         long result = 0;
         int n = xs.length;
@@ -512,6 +714,12 @@ public class ArrayUtil {
 
     public static int[] copy(int[] copy) {
         int[] ret = new int[copy.length];
+        System.arraycopy(copy, 0, ret, 0, ret.length);
+        return ret;
+    }
+
+    public static long[] copy(long[] copy) {
+        long[] ret = new long[copy.length];
         System.arraycopy(copy, 0, ret, 0, ret.length);
         return ret;
     }
@@ -639,6 +847,32 @@ public class ArrayUtil {
         return ret;
     }
 
+
+    public static long[] range(long from, long to, long increment) {
+        long diff = Math.abs(from - to);
+        long[] ret = new long[(int) (diff / increment)];
+        if (ret.length < 1)
+            ret = new long[1];
+
+        if (from < to) {
+            int count = 0;
+            for (long i = from; i < to; i += increment) {
+                if (count >= ret.length)
+                    break;
+                ret[count++] = i;
+            }
+        } else if (from > to) {
+            int count = 0;
+            for (int i = (int) from - 1; i >= to; i -= increment) {
+                if (count >= ret.length)
+                    break;
+                ret[count++] = i;
+            }
+        }
+
+        return ret;
+    }
+
     /**
      * Generate an int array ranging from
      * from to to.
@@ -652,6 +886,12 @@ public class ArrayUtil {
     public static int[] range(int from, int to) {
         if (from == to)
             return new int[0];
+        return range(from, to, 1);
+    }
+
+    public static long[] range(long from, long to) {
+        if (from == to)
+            return new long[0];
         return range(from, to, 1);
     }
 
@@ -744,8 +984,10 @@ public class ArrayUtil {
      * item
      */
     public static int[] removeIndex(int[] data, int... index) {
-        if (index.length >= data.length)
-            throw new IllegalStateException("Illegal remove: indexes.length > data.length");
+        if (index.length >= data.length) {
+            throw new IllegalStateException("Illegal remove: indexes.length > data.length (index.length="
+                    + index.length + ", data.length=" + data.length + ")");
+        }
         int offset = 0;
         /*
             workaround for non-existent indexes (such as Integer.MAX_VALUE)
@@ -766,6 +1008,184 @@ public class ArrayUtil {
         return ret;
     }
 
+
+    /**
+     * Zip 2 arrays in to:
+     *
+     * @param as
+     * @param bs
+     * @return
+     */
+    public static int[][] zip(int[] as, int[] bs) {
+        int[][] result = new int[as.length][2];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = new int[] {as[i], bs[i]};
+        }
+
+        return result;
+    }
+
+    /**
+     * Get the tensor matrix multiply shape
+     * @param aShape the shape of the first array
+     * @param bShape the shape of the second array
+     * @param axes the axes to do the multiply
+     * @return the shape for tensor matrix multiply
+     */
+    public static int[] getTensorMmulShape(int[] aShape, int[] bShape, int[][] axes) {
+        int validationLength = Math.min(axes[0].length, axes[1].length);
+        for (int i = 0; i < validationLength; i++) {
+            if (aShape[axes[0][i]] != bShape[axes[1][i]])
+                throw new IllegalArgumentException(
+                                "Size of the given axes a" + " t each dimension must be the same size.");
+            if (axes[0][i] < 0)
+                axes[0][i] += aShape.length;
+            if (axes[1][i] < 0)
+                axes[1][i] += bShape.length;
+
+        }
+
+        List<Integer> listA = new ArrayList<>();
+        for (int i = 0; i < aShape.length; i++) {
+            if (!Ints.contains(axes[0], i))
+                listA.add(i);
+        }
+
+
+
+        List<Integer> listB = new ArrayList<>();
+        for (int i = 0; i < bShape.length; i++) {
+            if (!Ints.contains(axes[1], i))
+                listB.add(i);
+        }
+
+
+        int n2 = 1;
+        int aLength = Math.min(aShape.length, axes[0].length);
+        for (int i = 0; i < aLength; i++) {
+            n2 *= aShape[axes[0][i]];
+        }
+
+        //if listA and listB are empty these donot initialize.
+        //so initializing with {1} which will then get overriden if not empty
+        int[] oldShapeA;
+        if (listA.size() == 0) {
+            oldShapeA = new int[] {1};
+        } else {
+            oldShapeA = Ints.toArray(listA);
+            for (int i = 0; i < oldShapeA.length; i++)
+                oldShapeA[i] = aShape[oldShapeA[i]];
+        }
+
+        int n3 = 1;
+        int bNax = Math.min(bShape.length, axes[1].length);
+        for (int i = 0; i < bNax; i++) {
+            n3 *= bShape[axes[1][i]];
+        }
+
+
+        int[] oldShapeB;
+        if (listB.size() == 0) {
+            oldShapeB = new int[] {1};
+        } else {
+            oldShapeB = Ints.toArray(listB);
+            for (int i = 0; i < oldShapeB.length; i++)
+                oldShapeB[i] = bShape[oldShapeB[i]];
+        }
+
+
+        int[] aPlusB = Ints.concat(oldShapeA, oldShapeB);
+        return aPlusB;
+    }
+
+    /**
+     * Permute the given input
+     * switching the dimensions of the input shape
+     * array with in the order of the specified
+     * dimensions
+     * @param shape the shape to permute
+     * @param dimensions the dimensions
+     * @return
+     */
+    public static int[] permute(int[] shape, int[] dimensions) {
+        int[] ret = new int[shape.length];
+        for (int i = 0; i < shape.length; i++) {
+            ret[i] = shape[dimensions[i]];
+        }
+
+        return ret;
+    }
+
+
+    /**
+     * Original credit: https://github.com/alberts/array4j/blob/master/src/main/java/net/lunglet/util/ArrayUtils.java
+     * @param a
+     * @return
+     */
+    public static int[] argsort(int[] a) {
+        return argsort(a, true);
+    }
+
+
+    /**
+     *
+     * @param a
+     * @param ascending
+     * @return
+     */
+    public static int[] argsort(final int[] a, final boolean ascending) {
+        Integer[] indexes = new Integer[a.length];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = i;
+        }
+        Arrays.sort(indexes, new Comparator<Integer>() {
+            @Override
+            public int compare(final Integer i1, final Integer i2) {
+                return (ascending ? 1 : -1) * Ints.compare(a[i1], a[i2]);
+            }
+        });
+
+        int[] ret = new int[indexes.length];
+        for (int i = 0; i < ret.length; i++)
+            ret[i] = indexes[i];
+
+        return ret;
+    }
+
+
+
+    /**
+     * Convert all dimensions in the specified
+     * axes array to be positive
+     * based on the specified range of values
+     * @param range
+     * @param axes
+     * @return
+     */
+    public static int[] convertNegativeIndices(int range, int[] axes) {
+        int[] axesRet = ArrayUtil.range(0, range);
+        int[] newAxes = ArrayUtil.copy(axes);
+        for (int i = 0; i < axes.length; i++) {
+            newAxes[i] = axes[axesRet[i]];
+        }
+
+        return newAxes;
+    }
+
+
+
+    /**
+     * Generate an array from 0 to length
+     * and generate take a subset
+     * @param length the length to generate to
+     * @param from the begin of the interval to take
+     * @param to the end of the interval to take
+     * @return the generated array
+     */
+    public static int[] copyOfRangeFrom(int length, int from, int to) {
+        return Arrays.copyOfRange(ArrayUtil.range(0, length), from, to);
+
+    }
 
     //Credit: http://stackoverflow.com/questions/15533854/converting-byte-array-to-double-array
 
@@ -1109,6 +1529,19 @@ public class ArrayUtil {
         return copy;
     }
 
+    public static long[] reverseCopy(long[] e) {
+        if (e.length < 1)
+            return e;
+
+        long[] copy = new long[e.length];
+        for (int i = 0; i <= e.length / 2; i++) {
+            long temp = e[i];
+            copy[i] = e[e.length - i - 1];
+            copy[e.length - i - 1] = temp;
+        }
+        return copy;
+    }
+
 
     public static double[] read(int length, DataInputStream dis) throws IOException {
         double[] ret = new double[length];
@@ -1285,6 +1718,16 @@ public class ArrayUtil {
                 ret[count++] = arr[i][j];
         return ret;
     }
+
+    public static int[] flattenF(int[][] arr) {
+        int[] ret = new int[arr.length * arr[0].length];
+        int count = 0;
+        for (int j = 0; j < arr[0].length; j++)
+            for (int i = 0; i < arr.length; i++)
+                ret[count++] = arr[i][j];
+        return ret;
+    }
+
 
     /**
      * Cast an int array to a double array
@@ -1523,7 +1966,7 @@ public class ArrayUtil {
     /** Calculate the shape of an arbitrary multi-dimensional array. Assumes:<br>
      * (a) array is rectangular (not ragged) and first elements (i.e., array[0][0][0]...) are non-null <br>
      * (b) First elements have > 0 length. So array[0].length > 0, array[0][0].length > 0, etc.<br>
-     * Can pass any Java array type: double[], Object[][][], float[][], etc.<br>
+     * Can pass any Java array opType: double[], Object[][][], float[][], etc.<br>
      * Length of returned array is number of dimensions; returned[i] is size of ith dimension.
      */
     public static int[] arrayShape(Object array) {
@@ -1561,7 +2004,7 @@ public class ArrayUtil {
         } else if (current instanceof short[]) {
             shape[shape.length - 1] = ((short[]) current).length;
         } else
-            throw new IllegalStateException("Unknown array type"); //Should never happen
+            throw new IllegalStateException("Unknown array opType"); //Should never happen
         return shape;
     }
 
@@ -1767,5 +2210,14 @@ public class ArrayUtil {
             return null;
 
         return list.get(RandomUtils.nextInt(0, list.size()));
+    }
+
+    /**
+     * Convert an int
+     * @param bool
+     * @return
+     */
+    public static int fromBoolean(boolean bool) {
+        return bool ? 1 : 0;
     }
 }

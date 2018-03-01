@@ -19,11 +19,11 @@
 
 package org.nd4j.linalg.api.ops.impl.scalar;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseScalarOp;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.List;
 
 /**
  * Scalar max operation.
@@ -43,13 +43,7 @@ public class ScalarMin extends BaseScalarOp {
         super(x, num);
     }
 
-    public ScalarMin(INDArray x, INDArray y, INDArray z, long n, IComplexNumber num) {
-        super(x, y, z, n, num);
-    }
 
-    public ScalarMin(INDArray x, IComplexNumber num) {
-        super(x, num);
-    }
 
     @Override
     public int opNum() {
@@ -57,83 +51,35 @@ public class ScalarMin extends BaseScalarOp {
     }
 
     @Override
-    public String name() {
-        return "min_scalar";
+    public String onnxName() {
+        return "Min";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        if (origin.absoluteValue().doubleValue() < complexNumber.absoluteValue().doubleValue())
-            return origin;
-        return complexNumber;
+    public String tensorflowName() {
+        return "RealMin";
     }
+
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        if (origin.absoluteValue().doubleValue() < complexNumber.absoluteValue().doubleValue())
-            return origin;
-        return complexNumber;
+    public String opName() {
+        return "scalar_min";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        if (origin.absoluteValue().doubleValue() < complexNumber.absoluteValue().doubleValue())
-            return origin;
-        return complexNumber;
-    }
 
-    @Override
-    public float op(float origin, float other) {
-        return FastMath.min(origin, num.floatValue());
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return FastMath.min(origin, num.doubleValue());
-    }
-
-    @Override
-    public double op(double origin) {
-        return FastMath.min(origin, num.doubleValue());
-
-    }
-
-    @Override
-    public float op(float origin) {
-        return FastMath.min(origin, num.floatValue());
-
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        if (origin.absoluteValue().doubleValue() < complexNumber.absoluteValue().doubleValue())
-            return origin;
-        return complexNumber;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        if (num != null)
-            return new ScalarMin(x.vectorAlongDimension(index, dimension), num);
-        else
-            return new ScalarMin(x.vectorAlongDimension(index, dimension), complexNumber);
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        if (num != null)
-            return new ScalarMin(x.tensorAlongDimension(index, dimension), num);
-        else
-            return new ScalarMin(x.tensorAlongDimension(index, dimension), complexNumber);
-    }
 
     @Override
     public void init(INDArray x, INDArray y, INDArray z, long n) {
         super.init(x, y, z, n);
-        if (num != null)
-            this.extraArgs = new Object[] {num};
-        else
-            this.extraArgs = new Object[] {complexNumber};
+        if (scalarValue != null)
+            this.extraArgs = new Object[] {scalarValue};
 
+
+    }
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        throw new UnsupportedOperationException();
     }
 }

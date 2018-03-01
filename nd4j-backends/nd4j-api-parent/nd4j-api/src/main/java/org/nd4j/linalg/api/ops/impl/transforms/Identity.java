@@ -19,106 +19,43 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
+import org.nd4j.autodiff.samediff.SDVariable;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Identity function
  *
  * @author Adam Gibson
  */
-public class Identity extends BaseTransformOp {
-    public Identity() {}
+public class Identity extends BaseDynamicTransformOp {
 
-    public Identity(INDArray x, INDArray z) {
-        super(x, z);
-    }
-
-    public Identity(INDArray x, INDArray z, long n) {
-        super(x, z, n);
-    }
-
-    public Identity(INDArray x, INDArray y, INDArray z, long n) {
-        super(x, y, z, n);
-    }
-
-    public Identity(INDArray x) {
-        super(x);
-    }
 
     @Override
-    public int opNum() {
-        return 27;
-    }
-
-    @Override
-    public String name() {
+    public String opName() {
         return "identity";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin;
+    public String onnxName() {
+        return "Constant";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin;
+    public String tensorflowName() {
+        return "Identity";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin;
+    public String[] tensorflowNames() {
+        return new String[] {"Identity","NoOp"};
     }
 
     @Override
-    public float op(float origin, float other) {
-        return origin;
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        return Collections.singletonList(sameDiff.one("grad-" + UUID.randomUUID().toString(),i_v.get(0).getShape()));
     }
 
-    @Override
-    public double op(double origin, double other) {
-        return origin;
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Identity(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Identity(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Identity(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Identity(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
 }

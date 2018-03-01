@@ -253,7 +253,7 @@ public interface DataSet extends Iterable<org.nd4j.linalg.dataset.DataSet>, Seri
     void setColumnNames(List<String> columnNames);
 
     /**
-     * Split the DataSet into two DataSets randomly
+     * SplitV the DataSet into two DataSets randomly
      * @param percentTrain    Percentage of examples to be returned in the training DataSet object
      */
     SplitTestAndTrain splitTestAndTrain(double percentTrain);
@@ -305,7 +305,7 @@ public interface DataSet extends Iterable<org.nd4j.linalg.dataset.DataSet>, Seri
      * Get the example metadata, or null if no metadata has been set<br>
      * Note: this method results in an unchecked cast - care should be taken when using this!
      *
-     * @param metaDataType Class of the metadata (used for type information)
+     * @param metaDataType Class of the metadata (used for opType information)
      * @param <T>          Type of metadata
      * @return List of metadata objects
      */
@@ -334,4 +334,9 @@ public interface DataSet extends Iterable<org.nd4j.linalg.dataset.DataSet>, Seri
      * This method detaches this DataSet from current Workspace (if any)
      */
     void detach();
+
+    /**
+     * @return true if the DataSet object is empty (no features, labels, or masks)
+     */
+    boolean isEmpty();
 }

@@ -19,17 +19,29 @@
 
 package org.nd4j.linalg.api.ops.impl.indexaccum;
 
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.complex.IComplexNumber;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseIndexAccumulation;
-import org.nd4j.linalg.api.ops.Op;
 import org.nd4j.linalg.factory.Nd4j;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Calculate the index of min value over a vector
  * @author Alex Black
  */
 public class IMin extends BaseIndexAccumulation {
+    public IMin(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public IMin(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
+
     public IMin() {}
 
     public IMin(INDArray x, INDArray y, long n) {
@@ -46,94 +58,15 @@ public class IMin extends BaseIndexAccumulation {
 
 
     @Override
-    public int update(double accum, int accumIdx, double x, int xIdx) {
-        return (accum <= x ? accumIdx : xIdx);
-    }
-
-    @Override
-    public int update(float accum, int accumIdx, float x, int xIdx) {
-        return (accum <= x ? accumIdx : xIdx);
-    }
-
-    @Override
-    public int update(double accum, int accumIdx, double x, double y, int idx) {
-        return (accum <= x ? accumIdx : idx);
-    }
-
-    @Override
-    public int update(float accum, int accumIdx, float x, float y, int idx) {
-        return (accum <= x ? accumIdx : idx);
-    }
-
-    @Override
-    public int update(IComplexNumber accum, int accumIdx, IComplexNumber x, int xIdx) {
-        return (accum.absoluteValue().doubleValue() <= x.absoluteValue().doubleValue() ? accumIdx : xIdx);
-    }
-
-    @Override
-    public int update(IComplexNumber accum, int accumIdx, double x, int idx) {
-        return (accum.absoluteValue().doubleValue() <= x ? accumIdx : idx);
-    }
-
-    @Override
-    public int update(IComplexNumber accum, int accumIdx, double x, double y, int idx) {
-        return (accum.absoluteValue().doubleValue() <= x ? accumIdx : idx);
-    }
-
-    public int update(IComplexNumber accum, int accumIdx, IComplexNumber x, IComplexNumber y, int idx) {
-        return (accum.absoluteValue().doubleValue() <= x.absoluteValue().doubleValue() ? accumIdx : idx);
-    }
-
-
-    @Override
     public int opNum() {
         return 1;
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "imin";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return origin;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return origin;
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin;
-    }
 
     @Override
     public float zeroFloat() {
@@ -155,24 +88,21 @@ public class IMin extends BaseIndexAccumulation {
         return Nd4j.createComplexNumber(Double.MAX_VALUE, 0);
     }
 
+
     @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new IMin(xAlongDimension, y.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new IMin(x.vectorAlongDimension(index, dimension));
-
+    public String onnxName() {
+        return "ArgMin";
     }
 
     @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
+    public String tensorflowName() {
+        return "argmin";
+    }
 
-        if (y() != null)
-            return new IMin(xAlongDimension, y.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new IMin(x.tensorAlongDimension(index, dimension));
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        //Not differentiable, but (assuming no ties) output does not change for a given infinitesimal change in the input
+        return Collections.singletonList(f().zerosLike(arg()));
     }
 }

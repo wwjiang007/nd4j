@@ -6,7 +6,6 @@ import org.nd4j.linalg.api.memory.MemoryWorkspace;
 import org.nd4j.linalg.api.memory.MemoryWorkspaceManager;
 import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
 import org.nd4j.linalg.api.memory.enums.*;
-import org.nd4j.linalg.api.memory.pointers.PagedPointer;
 import org.nd4j.linalg.api.memory.pointers.PointersPair;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.memory.abstracts.DummyWorkspace;
@@ -18,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Workspace manager implementation. Please note, this class is supposed to be used via Nd4j.getWorkspaceManager(), to provide consistency between different threads within given JVM process
@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
 
+    protected AtomicLong counter = new AtomicLong();
     protected WorkspaceConfiguration defaultConfiguration;
     protected ThreadLocal<Map<String, MemoryWorkspace>> backingMap = new ThreadLocal<>();
     private ReferenceQueue<MemoryWorkspace> queue;
@@ -33,7 +34,9 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
     private Map<String, Nd4jWorkspace.GarbageWorkspaceReference> referenceMap = new ConcurrentHashMap<>();
 
     public BasicWorkspaceManager() {
-        this(WorkspaceConfiguration.builder().initialSize(0).maxSize(0).overallocationLimit(0.3).policyAllocation(AllocationPolicy.OVERALLOCATE).policyLearning(LearningPolicy.FIRST_LOOP).policyMirroring(MirroringPolicy.FULL).policySpill(SpillPolicy.EXTERNAL).build());
+        this(WorkspaceConfiguration.builder().initialSize(0).maxSize(0).overallocationLimit(0.3)
+                        .policyAllocation(AllocationPolicy.OVERALLOCATE).policyLearning(LearningPolicy.FIRST_LOOP)
+                        .policyMirroring(MirroringPolicy.FULL).policySpill(SpillPolicy.EXTERNAL).build());
     }
 
     public BasicWorkspaceManager(@NonNull WorkspaceConfiguration defaultConfiguration) {
@@ -42,6 +45,16 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
 
         thread = new WorkspaceDeallocatorThread(this.queue);
         thread.start();
+    }
+
+    /**
+     * Returns globally unique ID
+     *
+     * @return
+     */
+    @Override
+    public String getUUID() {
+        return "Workspace_" + String.valueOf(counter.incrementAndGet());
     }
 
     /**
@@ -71,20 +84,21 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
     @Override
     public MemoryWorkspace getWorkspaceForCurrentThread(@NonNull WorkspaceConfiguration configuration, @NonNull String id) {
         ensureThreadExistense();
-
+    
         MemoryWorkspace workspace = backingMap.get().get(id);
         if (workspace == null) {
             workspace = new Nd4jWorkspace(configuration, id);
             backingMap.get().put(id, workspace);
         }
-
+    
         return workspace;
     }
     */
 
     protected void pickReference(MemoryWorkspace workspace) {
-        Nd4jWorkspace.GarbageWorkspaceReference reference = new Nd4jWorkspace.GarbageWorkspaceReference(workspace, queue);
-        referenceMap.put(reference.getId()+ "_" + reference.getThreadId(), reference);
+        Nd4jWorkspace.GarbageWorkspaceReference reference =
+                        new Nd4jWorkspace.GarbageWorkspaceReference(workspace, queue);
+        referenceMap.put(reference.getKey(), reference);
     }
 
     @Override
@@ -122,13 +136,13 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
 
         MemoryWorkspace workspace = backingMap.get().get(MemoryWorkspace.DEFAULT_ID);
         //if (workspace != null)
-            //workspace.destroyWorkspace();
+        //workspace.destroyWorkspace();
 
         backingMap.get().remove(MemoryWorkspace.DEFAULT_ID);
     }
 
     /**
-     * This method destorys all workspaces allocated in current thread
+     * This method destroys all workspaces allocated in current thread
      */
     @Override
     public void destroyAllWorkspacesForCurrentThread() {
@@ -137,7 +151,7 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
         List<MemoryWorkspace> workspaces = new ArrayList<>();
         workspaces.addAll(backingMap.get().values());
 
-        for (MemoryWorkspace workspace: workspaces) {
+        for (MemoryWorkspace workspace : workspaces) {
             destroyWorkspace(workspace);
         }
 
@@ -178,7 +192,7 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
      * @return
      */
     @Override
-    public MemoryWorkspace getAndActivateWorkspace(@NonNull WorkspaceConfiguration configuration,@NonNull String id) {
+    public MemoryWorkspace getAndActivateWorkspace(@NonNull WorkspaceConfiguration configuration, @NonNull String id) {
         return getWorkspaceForCurrentThread(configuration, id).notifyScopeEntered();
     }
 
@@ -194,6 +208,15 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
         return backingMap.get().containsKey(id);
     }
 
+
+    @Override
+    public boolean checkIfWorkspaceExistsAndActive(@NonNull String id) {
+        boolean exists = checkIfWorkspaceExists(id);
+        if (!exists)
+            return false;
+
+        return backingMap.get().get(id).isScopeActive();
+    }
 
     /**
      * This method temporary opens block out of any workspace scope.
@@ -227,12 +250,13 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
         public void run() {
             while (true) {
                 try {
-                    Nd4jWorkspace.GarbageWorkspaceReference reference = (Nd4jWorkspace.GarbageWorkspaceReference) queue.remove();
+                    Nd4jWorkspace.GarbageWorkspaceReference reference =
+                                    (Nd4jWorkspace.GarbageWorkspaceReference) queue.remove();
                     if (reference != null) {
-//                      log.info("Releasing reference for Workspace [{}]", reference.getId());
+                        //                      log.info("Releasing reference for Workspace [{}]", reference.getId());
                         PointersPair pair = reference.getPointersPair();
                         // purging workspace planes
-                        if (pair!= null) {
+                        if (pair != null) {
                             if (pair.getDevicePointer() != null) {
                                 //log.info("Deallocating device...");
                                 Nd4j.getMemoryManager().release(pair.getDevicePointer(), MemoryKind.DEVICE);
@@ -240,8 +264,7 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
 
 
                             if (pair.getHostPointer() != null) {
-//                                log.info("Deallocating host...");
-                                referenceMap.remove(reference.getId() + "_" + reference.getThreadId());
+                                //                                log.info("Deallocating host...");
                                 Nd4j.getMemoryManager().release(pair.getHostPointer(), MemoryKind.HOST);
                             }
                         }
@@ -265,7 +288,11 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
                             if (pair.getDevicePointer() != null)
                                 Nd4j.getMemoryManager().release(pair.getDevicePointer(), MemoryKind.DEVICE);
                         }
+
+                        referenceMap.remove(reference.getKey());
                     }
+                } catch (InterruptedException e) {
+                    return; /* terminate thread when being interrupted */
                 } catch (Exception e) {
                     //
                 }
@@ -283,10 +310,23 @@ public abstract class BasicWorkspaceManager implements MemoryWorkspaceManager {
         log.info("Number of workspaces in current thread: {}", map.size());
         for (String key : map.keySet()) {
             log.info("Workspace: {}", key);
-            log.info("Allocated amount: {} bytes", ((Nd4jWorkspace)map.get(key)).getCurrentSize());
-            log.info("External (spilled) amount: {} bytes", ((Nd4jWorkspace)map.get(key)).getSpilledSize());
-            log.info("External (pinned) amount: {} bytes", ((Nd4jWorkspace)map.get(key)).getPinnedSize());
+            log.info("Allocated amount: {} bytes", ((Nd4jWorkspace) map.get(key)).getCurrentSize());
+            log.info("External (spilled) amount: {} bytes", ((Nd4jWorkspace) map.get(key)).getSpilledSize());
+            log.info("External (pinned) amount: {} bytes", ((Nd4jWorkspace) map.get(key)).getPinnedSize());
             System.out.println();
         }
+    }
+
+
+    @Override
+    public List<String> getAllWorkspacesIdsForCurrentThread() {
+        ensureThreadExistense();
+        return new ArrayList<>(backingMap.get().keySet());
+    }
+
+    @Override
+    public List<MemoryWorkspace> getAllWorkspacesForCurrentThread() {
+        ensureThreadExistense();
+        return new ArrayList<>(backingMap.get().values());
     }
 }

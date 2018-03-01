@@ -19,112 +19,56 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms.comparison;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import lombok.NonNull;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.api.ops.impl.transforms.BaseDynamicTransformOp;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Max function
  *
  * @author Adam Gibson
  */
-public class Max extends BaseTransformOp {
+public class Max extends BaseDynamicTransformOp {
     public Max() {}
 
-    public Max(INDArray x, INDArray y, INDArray z, long n) {
-        super(x, y, z, n);
+    public Max(SameDiff sameDiff, @NonNull SDVariable first, @NonNull SDVariable second){
+        this(sameDiff, new SDVariable[]{first, second}, false);
     }
 
-    public Max(INDArray x) {
-        super(x);
+    public Max( SameDiff sameDiff, SDVariable[] args, boolean inPlace) {
+        super(sameDiff, args, inPlace);
     }
 
-    public Max(INDArray ndArray, INDArray dup) {
-        super(ndArray, dup);
+    public Max( INDArray[] inputs, INDArray[] outputs) {
+        super(inputs, outputs);
     }
 
-    public Max(INDArray x, INDArray z, long n) {
-        super(x, z, n);
-    }
-
-    @Override
-    public int opNum() {
-        return 13;
+  @Override
+    public String opName() {
+        return "maximum";
     }
 
     @Override
-    public String name() {
-        return "max";
+    public String onnxName() {
+       return "Max";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        double val = origin.absoluteValue().doubleValue();
-        return val < other ? origin : Nd4j.createComplexNumber(other, 0.0);
+    public String tensorflowName() {
+        return "Maximum";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        float val = origin.absoluteValue().floatValue();
-        return val < other ? origin : Nd4j.createComplexNumber(other, 0.0);
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        SDVariable max = outputVariables()[0];
+        SDVariable eq1 = sameDiff.eq(larg(), max);
+        SDVariable eq2 = sameDiff.eq(rarg(), max);
 
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin.absoluteValue().doubleValue() < other.absoluteValue().doubleValue() ? origin : other;
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return FastMath.max(origin, other);
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return FastMath.max(origin, other);
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin;
-    }
-
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Max(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Max(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Max(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Max(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
+        return Arrays.asList(eq1.mul(f1.get(0)), eq2.mul(f1.get(0)));
     }
 }

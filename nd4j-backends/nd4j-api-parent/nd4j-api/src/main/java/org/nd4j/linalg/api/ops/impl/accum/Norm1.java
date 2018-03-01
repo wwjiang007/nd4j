@@ -19,13 +19,15 @@
 
 package org.nd4j.linalg.api.ops.impl.accum;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseAccumulation;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.ops.transforms.Transforms;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Sum of absolute values
@@ -33,6 +35,14 @@ import org.nd4j.linalg.ops.transforms.Transforms;
  * @author Adam Gibson
  */
 public class Norm1 extends BaseAccumulation {
+    public Norm1(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public Norm1(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
+
     public Norm1() {}
 
     public Norm1(INDArray x, INDArray y, INDArray z, long n) {
@@ -56,65 +66,6 @@ public class Norm1 extends BaseAccumulation {
         return Transforms.abs(x());
     }
 
-    @Override
-    public double op(double origin) {
-        return FastMath.abs(origin);
-    }
-
-    @Override
-    public float op(float origin) {
-        return FastMath.abs(origin);
-    }
-
-    @Override
-    public double update(double accum, double x) {
-        return accum + x;
-    }
-
-    @Override
-    public double update(double accum, double x, double y) {
-        return accum + x;
-    }
-
-    @Override
-    public float update(float accum, float x) {
-        return accum + x;
-    }
-
-    @Override
-    public float update(float accum, float x, float y) {
-        return accum + x;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x) {
-        return accum.add(x >= 0 ? x : -x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x, double y) {
-        return accum.add(x >= 0 ? x : -x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x) {
-        return accum.add(x.absoluteValue());
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, IComplexNumber y) {
-        return accum.add(x.absoluteValue());
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, double y) {
-        return accum.add(x.absoluteValue());
-    }
-
-    @Override
-    public IComplexNumber zeroComplex() {
-        return Nd4j.createComplexNumber(0.0, 0.0);
-    }
 
     @Override
     public int opNum() {
@@ -122,43 +73,34 @@ public class Norm1 extends BaseAccumulation {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "norm1";
     }
 
     @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Norm1(xAlongDimension, y.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Norm1(x.vectorAlongDimension(index, dimension));
-
+    public String onnxName() {
+        return "Norm";
     }
 
     @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
+    public String tensorflowName() {
+        return "norm";
+    }
 
-        if (y() != null)
-            return new Norm1(xAlongDimension, y.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Norm1(x.tensorAlongDimension(index, dimension));
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        //d l1Norm(in)/dx = signum(x)
+        SDVariable signum = sameDiff.sign(arg());
+
+        //Note that we need to expand the dimensions of the gradient - auto-broadcast won't work for all cases.
+        int origRank = Shape.rankFromShape(arg().getShape());   //TODO shape may not always be defined?
+        SDVariable bcGrad = sameDiff.f().reductionBroadcastableWithOrigShape(origRank, dimensions, i_v1.get(0));
+        return Collections.singletonList(signum.mul(bcGrad));
     }
 
     @Override
-    public double combineSubResults(double first, double second) {
-        return first + second;
-    }
-
-    @Override
-    public float combineSubResults(float first, float second) {
-        return first + second;
-    }
-
-    @Override
-    public IComplexNumber combineSubResults(IComplexNumber first, IComplexNumber second) {
-        return first.add(second);
+    public Type getOpType() {
+        return Type.REDUCE;
     }
 }

@@ -19,13 +19,15 @@
 
 package org.nd4j.linalg.api.ops.impl.accum;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseAccumulation;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.ops.transforms.Transforms;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The max absolute value
@@ -33,6 +35,14 @@ import org.nd4j.linalg.ops.transforms.Transforms;
  * @author Adam Gibson
  */
 public class NormMax extends BaseAccumulation {
+    public NormMax(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public NormMax(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
+
     public NormMax() {}
 
     public NormMax(INDArray x, INDArray y, INDArray z, long n) {
@@ -56,57 +66,6 @@ public class NormMax extends BaseAccumulation {
         return Transforms.abs(x());
     }
 
-    @Override
-    public double update(double accum, double x) {
-        numProcessed++;
-        return FastMath.max(FastMath.abs(x), accum);
-    }
-
-    @Override
-    public double update(double accum, double x, double y) {
-        return update(accum, x);
-    }
-
-
-    @Override
-    public float update(float accum, float x) {
-        return (x >= 0 ? (x > accum ? x : accum) : (-x > accum ? -x : accum));
-    }
-
-    @Override
-    public float update(float accum, float x, float y) {
-        return (x >= 0 ? (x > accum ? x : accum) : (-x > accum ? -x : accum));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x) {
-        return (accum.absoluteValue().doubleValue() >= FastMath.abs(x) ? accum
-                        : Nd4j.createComplexNumber(FastMath.abs(x), 0));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x, double y) {
-        return (accum.absoluteValue().doubleValue() >= FastMath.abs(x) ? accum
-                        : Nd4j.createComplexNumber(FastMath.abs(x), 0));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x) {
-        return (accum.absoluteValue().doubleValue() >= x.absoluteValue().doubleValue() ? accum
-                        : Nd4j.createComplexNumber(x.absoluteValue(), 0));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, IComplexNumber y) {
-        return (accum.absoluteValue().doubleValue() >= x.absoluteValue().doubleValue() ? accum
-                        : Nd4j.createComplexNumber(x.absoluteValue(), 0));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, double y) {
-        return (accum.absoluteValue().doubleValue() >= x.absoluteValue().doubleValue() ? accum
-                        : Nd4j.createComplexNumber(x.absoluteValue(), 0));
-    }
 
     @Override
     public int opNum() {
@@ -114,48 +73,43 @@ public class NormMax extends BaseAccumulation {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "normmax";
     }
 
+
     @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        throw new UnsupportedOperationException();
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        //maxnorm(in) = max_i |x_i|
+        //d maxnorm(in)/dx = 0 if x_i is not the max, or d|x|/dx otherwise
+
+        SDVariable absIn = sameDiff.abs(arg());
+        SDVariable maxnorm = outputVariables()[0];
+        int origRank = Shape.rankFromShape(arg().getShape());   //TODO shape may not always be defined?
+        SDVariable maxnormBc = f().reductionBroadcastableWithOrigShape(origRank, dimensions, maxnorm);
+        maxnormBc = sameDiff.onesLike(arg()).mul(maxnormBc);
+        SDVariable eq = sameDiff.eq(absIn, maxnormBc);
+        SDVariable dAbsXdX = sameDiff.sign(arg());
+        SDVariable dNormmaxDx = eq.mul(dAbsXdX);
+        SDVariable broadcastableGrad = f().reductionBroadcastableWithOrigShape(origRank, dimensions, i_v1.get(0));
+        SDVariable ret = dNormmaxDx.mul(broadcastableGrad);
+
+        return Collections.singletonList(ret);
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        throw new UnsupportedOperationException();
+    public String onnxName() {
+        return "Norm";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        throw new UnsupportedOperationException();
+    public String tensorflowName() {
+       return "norm";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        throw new UnsupportedOperationException();
-
+    public Type getOpType() {
+        return Type.REDUCE;
     }
 
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new NormMax(xAlongDimension, y.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new NormMax(x.vectorAlongDimension(index, dimension));
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new NormMax(xAlongDimension, y.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new NormMax(x.tensorAlongDimension(index, dimension));
-    }
 }

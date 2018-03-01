@@ -19,12 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.util.ComplexUtil;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Ceiling elementwise function
@@ -32,6 +33,18 @@ import org.nd4j.linalg.util.ComplexUtil;
  * @author Adam Gibson
  */
 public class Ceil extends BaseTransformOp {
+    public Ceil(SameDiff sameDiff, SDVariable i_v, boolean inPlace) {
+        super(sameDiff, i_v, inPlace);
+    }
+
+    public Ceil(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+    }
+
+    public Ceil(SameDiff sameDiff, SDVariable i_v) {
+        super(sameDiff, i_v, (Object[])null);
+    }
+
     public Ceil() {}
 
     public Ceil(INDArray x, INDArray z) {
@@ -56,71 +69,25 @@ public class Ceil extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "ceil";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return ComplexUtil.ceil(origin);
+    public String onnxName() {
+        return "Ceil";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return ComplexUtil.ceil(origin);
+    public String tensorflowName() {
+        return "Ceil";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return ComplexUtil.ceil(origin);
-    }
+
 
     @Override
-    public float op(float origin, float other) {
-        return (float) FastMath.ceil(origin);
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return FastMath.ceil(origin);
-    }
-
-    @Override
-    public double op(double origin) {
-        return FastMath.ceil(origin);
-    }
-
-    @Override
-    public float op(float origin) {
-        return (float) FastMath.ceil(origin);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return ComplexUtil.ceil(origin);
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Ceil(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Ceil(xAlongDimension, z.vectorAlongDimension(index, dimension));
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Ceil(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Ceil(xAlongDimension, z.tensorAlongDimension(index, dimension));
-
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        //not continuously differentiable, but dOut/dIn = 0 in most places
+        return Collections.singletonList(f().zerosLike(arg()));
     }
 }

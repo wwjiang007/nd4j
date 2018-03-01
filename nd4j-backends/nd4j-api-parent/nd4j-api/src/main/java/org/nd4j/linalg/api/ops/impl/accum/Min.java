@@ -19,12 +19,14 @@
 
 package org.nd4j.linalg.api.ops.impl.accum;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseAccumulation;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.api.shape.Shape;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Calculate the min over a vector
@@ -32,6 +34,13 @@ import org.nd4j.linalg.factory.Nd4j;
  * @author Adam Gibson
  */
 public class Min extends BaseAccumulation {
+    public Min(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public Min(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
 
     public Min() {}
 
@@ -58,63 +67,8 @@ public class Min extends BaseAccumulation {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "min";
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return origin;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return origin;
-    }
-
-    @Override
-    public double update(double accum, double x) {
-        return FastMath.min(accum, x);
-    }
-
-    @Override
-    public double update(double accum, double x, double y) {
-        return FastMath.min(accum, x);
-    }
-
-    @Override
-    public float update(float accum, float x) {
-        return FastMath.min(accum, x);
-    }
-
-    @Override
-    public float update(float accum, float x, float y) {
-        return FastMath.min(accum, x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x) {
-        return (accum.absoluteValue().doubleValue() < x ? accum : Nd4j.createComplexNumber(x, 0));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x, double y) {
-        return (accum.absoluteValue().doubleValue() < x ? accum : Nd4j.createComplexNumber(x, 0));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x) {
-        return (accum.absoluteValue().doubleValue() < x.absoluteValue().doubleValue() ? accum : x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, IComplexNumber y) {
-        return (accum.absoluteValue().doubleValue() < x.absoluteValue().doubleValue() ? accum : x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, double y) {
-        return (accum.absoluteValue().doubleValue() < x.absoluteValue().doubleValue() ? accum : x);
     }
 
     @Override
@@ -133,25 +87,35 @@ public class Min extends BaseAccumulation {
     }
 
     @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Min(xAlongDimension, y.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Min(x.vectorAlongDimension(index, dimension));
-
+    public String onnxName() {
+        return "ReduceMin";
     }
 
     @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Min(xAlongDimension, y.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Min(x.tensorAlongDimension(index, dimension));
+    public String tensorflowName() {
+        return "ReduceMin";
     }
 
 
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        //TODO do we need to handle the "multiple equal minimums" case?
+        //TODO code duplication (min/max)
+
+        SDVariable out = outputVariables()[0];
+
+        int origRank = Shape.rankFromShape(arg().getShape());
+        SDVariable expandedOut = sameDiff.f().reductionBroadcastableWithOrigShape(origRank, dimensions, out);
+        expandedOut = sameDiff.onesLike("temp0", arg()).mul("tempmul", expandedOut);
+        SDVariable expandedGrad = sameDiff.f().reductionBroadcastableWithOrigShape(origRank, dimensions, i_v1.get(0));
+
+        SDVariable eq = sameDiff.eq(arg(), expandedOut);
+        SDVariable ret = eq.mul(expandedGrad);
+        return Collections.singletonList(ret);
+    }
+
+    @Override
+    public Type getOpType() {
+        return Type.REDUCE;
+    }
 }

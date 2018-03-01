@@ -19,11 +19,26 @@
 
 package org.nd4j.linalg.api.ops;
 
-import org.nd4j.linalg.api.buffer.DataBuffer;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import com.google.common.primitives.Ints;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import onnx.OnnxProto3;
+import org.apache.commons.lang3.ArrayUtils;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.graphmapper.onnx.OnnxGraphMapper;
+import org.nd4j.imports.graphmapper.tf.TFGraphMapper;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.util.LinAlgExceptions;
+import org.nd4j.linalg.api.shape.Shape;
+import org.nd4j.linalg.exception.ND4JIllegalStateException;
+import org.tensorflow.framework.AttrValue;
+import org.tensorflow.framework.GraphDef;
+import org.tensorflow.framework.NodeDef;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Base class for accumulation, initiates the initial entry
@@ -32,13 +47,82 @@ import org.nd4j.linalg.util.LinAlgExceptions;
  *
  * @author Adam Gibson
  */
+@Slf4j
 public abstract class BaseAccumulation extends BaseOp implements Accumulation {
     protected Number finalResult;
-    protected IComplexNumber finalResultComplex;
-    protected boolean applyFinalTransform = true;
+    protected boolean keepDims = false;
+
+    // flag for tf imported ops, shows that there's probably one more value appended in axis
+    protected boolean newFormat = false;
+    protected boolean isComplex = false;
+
+
+    public BaseAccumulation(SameDiff sameDiff,
+                            SDVariable i_v,
+                            int[] dimensions,boolean keepDims) {
+        super(sameDiff,new Object[]{dimensions});
+        if (i_v != null) {
+            if(dimensions == null || dimensions.length < 1)
+                dimensions = new int[] {Integer.MAX_VALUE};
+
+            this.dimensions = dimensions;
+            f().validateDifferentialFunctionsameDiff(i_v);
+            this.keepDims = keepDims;
+            this.xVertexId = i_v.getVarName();
+            sameDiff.addArgsFor(new String[]{xVertexId},this);
+            if(Shape.isPlaceholderShape(i_v.getShape())) {
+                sameDiff.addPropertyToResolve(this,i_v.getVarName());
+            }
+
+        } else {
+            throw new IllegalArgumentException("Input not null variable.");
+        }
+
+    }
+
+    public BaseAccumulation(SameDiff sameDiff,
+                            SDVariable i_v,
+                            SDVariable i_v2,
+                            int[] dimensions,boolean keepDims) {
+        super(sameDiff,new Object[]{dimensions});
+        if (i_v != null) {
+            if(dimensions == null || dimensions.length < 1)
+                dimensions = new int[] {Integer.MAX_VALUE};
+
+            this.dimensions = dimensions;
+
+            this.xVertexId = i_v.getVarName();
+            this.yVertexId = i_v2.getVarName();
+            f().validateDifferentialFunctionsameDiff(i_v);
+            f().validateDifferentialFunctionsameDiff(i_v2);
+            this.keepDims = keepDims;
+            sameDiff.addArgsFor(new String[]{xVertexId,yVertexId},this);
+
+        } else {
+            throw new IllegalArgumentException("Input not null variable.");
+        }
+
+    }
+
+
+
+    public BaseAccumulation(SameDiff sameDiff,
+                            SDVariable i_v,
+                            int[] dimensions) {
+        this(sameDiff,i_v,dimensions,false);
+
+    }
+
+    public BaseAccumulation(SameDiff sameDiff,
+                            SDVariable i_v,
+                            SDVariable i_v2,
+                            int[] dimensions) {
+        this(sameDiff,i_v,i_v2,dimensions,false);
+    }
+
+
 
     public BaseAccumulation() {}
-
 
     /**
      * Initialize with the given
@@ -53,8 +137,8 @@ public abstract class BaseAccumulation extends BaseOp implements Accumulation {
     public BaseAccumulation(INDArray x, INDArray y, INDArray z, long n) {
         super(x, y, z, n);
         init();
-        if (y != null)
-            LinAlgExceptions.assertSameLength(x, y);
+        //      if (y != null)
+        //            LinAlgExceptions.assertSameLength(x, y);
         //LinAlgExceptions.assertSameLength(x, z);
 
     }
@@ -69,9 +153,16 @@ public abstract class BaseAccumulation extends BaseOp implements Accumulation {
 
     public BaseAccumulation(INDArray x, INDArray y) {
         this(x, y, x, x.lengthLong());
-        if (y != null)
-            LinAlgExceptions.assertSameLength(x, y);
+        //if (y != null)
+        //    LinAlgExceptions.assertSameLength(x, y);
     }
+
+    public BaseAccumulation(SameDiff sameDiff) {
+        this.sameDiff = sameDiff;
+    }
+
+
+
 
     private void init() {
         if (z == null || x == z)
@@ -89,158 +180,91 @@ public abstract class BaseAccumulation extends BaseOp implements Accumulation {
     }
 
     @Override
-    public boolean applyFinalTransform() {
-        return applyFinalTransform;
+    public boolean isKeepDims() {
+        return keepDims;
     }
 
     @Override
-    public void setApplyFinalTransform(boolean applyFinalTransform) {
-        this.applyFinalTransform = applyFinalTransform;
+    public List<int[]> calculateOutputShape() {
+        if(args().length < 1) {
+            throw new ND4JIllegalStateException("Unable to compute input shape. No arguments found.");
+        }
+
+        if(arg().getShape() == null)
+            return Collections.emptyList();
+
+        List<int[]> ret = new ArrayList<>(1);
+        val reducedShape = Shape.getReducedShape(arg().getShape(),dimensions, isKeepDims(), newFormat);
+        ret.add(reducedShape);
+        return ret;
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        numProcessed++;
-        return origin;
+    public void initFromTensorFlow(NodeDef nodeDef, SameDiff initWith, Map<String, AttrValue> attributesForNode, GraphDef graph) {
+        newFormat = true;
+
+        if (!attributesForNode.containsKey("axis") && !hasReductionIndices(nodeDef)) {
+            this.dimensions = new int[] { Integer.MAX_VALUE };
+        }
+        else if(hasReductionIndices(nodeDef)) {
+            NodeDef reductionNode = null;
+            for(int i = 0; i < graph.getNodeCount(); i++) {
+                if (graph.getNode(i).getName().equals(nodeDef.getName() + "/reduction_indices")) {
+                    reductionNode = graph.getNode(i);
+                    val arr = TFGraphMapper.getInstance().getNDArrayFromTensor("value", graph.getNode(i), graph);
+
+                    boolean keepAxis = nodeDef.getAttrOrThrow("keep_dims").getB();
+
+                    // keepAxis = false by default
+                    int[] dimensions = ArrayUtils.add(arr.data().asInt(), 0, keepAxis ? 1 : 0);
+
+
+                    this.dimensions = dimensions;
+                    break;
+                }
+            }
+
+            if(reductionNode == null)
+                throw new ND4JIllegalStateException("No node found!");
+        }
+        else {
+            val dims = TFGraphMapper.getInstance().getNDArrayFromTensor("axis",nodeDef,graph).data().asInt();
+            this.dimensions = dims;
+        }
+
+        if(attributesForNode.containsKey("keep_dims")) {
+            val keepDims = attributesForNode.get("keep_dims").getB();
+            this.keepDims = keepDims;
+        }
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        numProcessed++;
-        return origin;
+    protected boolean hasReductionIndices(NodeDef nodeDef) {
+        for(int i = 0; i < nodeDef.getInputCount(); i++) {
+            if(nodeDef.getInput(i).contains("reduction_indices")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        numProcessed++;
-        return origin;
-    }
 
     @Override
-    public float op(float origin, float other) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public double op(double origin) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public double zeroDouble() {
-        return 0.0;
-    }
-
-    @Override
-    public float zeroFloat() {
-        return 0.0f;
-    }
-
-    @Override
-    public float zeroHalf() {
-        return 0.0f;
-    }
-
-    @Override
-    public IComplexNumber zeroComplex() {
-        return Nd4j.createComplexNumber(0.0, 0.0);
-    }
-
-    @Override
-    public long numProcessed() {
-        return numProcessed;
-    }
-
-    @Override
-    public void init(INDArray x, INDArray y, INDArray z, long n) {
-        super.init(x, y, z, n);
-        if (Nd4j.dataType() == DataBuffer.Type.DOUBLE) {
-            this.extraArgs = new Object[]{zeroDouble()};
-        } else if (Nd4j.dataType() == DataBuffer.Type.FLOAT) {
-            this.extraArgs = new Object[]{zeroFloat()};
-        } else if (Nd4j.dataType() == DataBuffer.Type.HALF) {
-            this.extraArgs = new Object[]{zeroHalf()};
+    public void initFromOnnx(OnnxProto3.NodeProto node, SameDiff initWith, Map<String, OnnxProto3.AttributeProto> attributesForNode, OnnxProto3.GraphProto graph) {
+        if (!attributesForNode.containsKey("axes")) {
+            this.dimensions = new int[] { Integer.MAX_VALUE };
+        }
+        else {
+            val map = OnnxGraphMapper.getInstance().getAttrMap(node);
+            val dims = Ints.toArray(map.get("axes").getIntsList());
+            this.dimensions = dims;
         }
     }
 
     @Override
-    public double combineSubResults(double first, double second) {
-        return update(first, second);
+    public void setFinalResult(double value) {
+        this.finalResult = value;
     }
-
-    @Override
-    public float combineSubResults(float first, float second) {
-        return update(first, second);
-    }
-
-    @Override
-    public IComplexNumber combineSubResults(IComplexNumber first, IComplexNumber second) {
-        return update(first, second);
-    }
-
-    @Override
-    public double getAndSetFinalResult(double accum) {
-        this.finalResult = accum;
-        return accum;
-    }
-
-    @Override
-    public float getAndSetFinalResult(float accum) {
-        this.finalResult = accum;
-        return accum;
-    }
-
-    @Override
-    public IComplexNumber getAndSetFinalResult(IComplexNumber accum) {
-        this.finalResultComplex = accum;
-        return accum;
-    }
-
-    @Override
-    public double calculateFinalResult(double accum, long n) {
-        return accum;
-    }
-
-    @Override
-    public float calculateFinalResult(float accum, long n) {
-        return accum;
-    }
-
-    @Override
-    public Number currentResult() {
-        return finalResult;
-    }
-
-    @Override
-    public void setFinalResult(Number number) {
-        this.finalResult = number;
-    }
-
-    @Override
-    public void setFinalResultComplex(IComplexNumber number) {
-        this.finalResultComplex = number;
-    }
-
 
     @Override
     public Number getFinalResult() {
@@ -248,7 +272,27 @@ public abstract class BaseAccumulation extends BaseOp implements Accumulation {
     }
 
     @Override
-    public IComplexNumber getFinalResultComplex() {
-        return finalResultComplex;
+    public double zeroDouble() {
+        return 0;
+    }
+
+    @Override
+    public float zeroFloat() {
+        return 0;
+    }
+
+    @Override
+    public float zeroHalf() {
+        return 0;
+    }
+
+    @Override
+    public Type opType() {
+        return Type.REDUCE;
+    }
+
+    @Override
+    public boolean isComplexAccumulation() {
+        return isComplex;
     }
 }

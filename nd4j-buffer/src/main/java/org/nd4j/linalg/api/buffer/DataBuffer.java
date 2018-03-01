@@ -39,12 +39,14 @@ import java.util.Collection;
 public interface DataBuffer extends Serializable {
 
     enum Type {
-        DOUBLE, FLOAT, INT, HALF, COMPRESSED
+        DOUBLE, FLOAT, INT, HALF, COMPRESSED, LONG,UNKNOWN
     }
 
     enum TypeEx {
-        FLOAT8, INT8, UINT8, FLOAT16, INT16, UINT16, FLOAT, DOUBLE
+        FLOAT8, INT8, UINT8, FLOAT16, INT16, UINT16, FLOAT, DOUBLE, THRESHOLD, FTHRESHOLD
     }
+
+    long getGenerationId();
 
 
     /**
@@ -351,9 +353,9 @@ public interface DataBuffer extends Serializable {
     byte[] asBytes();
 
     /**
-     * The data type of the buffer
+     * The data opType of the buffer
      *
-     * @return the data type of the buffer
+     * @return the data opType of the buffer
      */
     Type dataType();
 
@@ -394,6 +396,13 @@ public interface DataBuffer extends Serializable {
      * @return the element at this index
      */
     double getDouble(long i);
+
+    /**
+     * Get element i in the buffer as long value
+     * @param i
+     * @return
+     */
+    long getLong(long i);
 
     /**
      * Get element i in the buffer as a double
@@ -631,4 +640,16 @@ public interface DataBuffer extends Serializable {
      * @return
      */
     MemoryWorkspace getParentWorkspace();
+
+    /**
+     * Reallocate the native memory of the buffer
+     * @param length the new length of the buffer
+     * @return this databuffer
+     * */
+    DataBuffer reallocate(long length);
+
+    /**
+     * @return the capacity of the databuffer
+     * */
+    long capacity();
 }

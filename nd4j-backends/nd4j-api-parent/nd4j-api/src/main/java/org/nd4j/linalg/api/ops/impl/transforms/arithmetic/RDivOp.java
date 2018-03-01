@@ -19,118 +19,49 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms.arithmetic;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
+import org.nd4j.linalg.api.ops.impl.transforms.BaseDynamicTransformOp;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Division operation
+ * OldReverse Division operation
  *
  * @author Adam Gibson
  */
-public class RDivOp extends BaseTransformOp {
+public class RDivOp extends BaseDynamicTransformOp {
+
     public RDivOp() {}
 
-    public RDivOp(INDArray x, INDArray y, INDArray z, long n) {
-        super(x, y, z, n);
+    public RDivOp( SameDiff sameDiff, SDVariable[] args, boolean inPlace) {
+        super(sameDiff, args, inPlace);
     }
 
-    public RDivOp(INDArray x) {
-        super(x);
-    }
-
-    public RDivOp(INDArray x, INDArray z) {
-        super(x, z);
-    }
-
-    public RDivOp(INDArray x, INDArray z, long n) {
-        super(x, z, n);
-    }
-
-    public RDivOp(INDArray x, INDArray y, INDArray z) {
-        super(x, y, z, x.lengthLong());
-    }
-
-    @Override
-    public int opNum() {
-        return 7;
-    }
-
-    @Override
-    public String name() {
-        return "rdiv";
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin.rdiv(other);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin.rdiv(other);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return other.div(origin);
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return other / origin;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return other / origin;
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new RDivOp(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new RDivOp(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new RDivOp(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new RDivOp(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
+    public RDivOp( INDArray[] inputs, INDArray[] outputs) {
+        super(inputs, outputs);
     }
 
 
     @Override
-    public void init(INDArray x, INDArray y, INDArray z, long n) {
-        super.init(x, y, z, n);
-        if (y == null)
-            throw new IllegalArgumentException("No components to divide");
+    public String opName() {
+        return "reversedivide";
+    }
+
+    @Override
+    public String onnxName() {
+        return "Div";
+    }
+
+    @Override
+    public String tensorflowName() {
+        return "div";
+    }
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        return f().rdivBp(larg(), rarg(), i_v.get(0));
     }
 }

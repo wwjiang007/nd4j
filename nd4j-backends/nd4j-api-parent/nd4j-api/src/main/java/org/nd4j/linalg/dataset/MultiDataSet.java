@@ -1,11 +1,9 @@
 package org.nd4j.linalg.dataset;
 
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.executioner.GridExecutioner;
 import org.nd4j.linalg.dataset.api.DataSetUtil;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.INDArrayIndex;
 import org.nd4j.linalg.indexing.NDArrayIndex;
 
 import java.io.*;
@@ -15,7 +13,7 @@ import java.util.*;
  * @author Alex Black
  */
 public class MultiDataSet implements org.nd4j.linalg.dataset.api.MultiDataSet {
-    private static final INDArray EMPTY_MASK_ARRAY_PLACEHOLDER = Nd4j.create(new float[] {-1});
+    private static final ThreadLocal<INDArray> EMPTY_MASK_ARRAY_PLACEHOLDER = new ThreadLocal<>();
 
     private INDArray[] features;
     private INDArray[] labels;
@@ -36,10 +34,9 @@ public class MultiDataSet implements org.nd4j.linalg.dataset.api.MultiDataSet {
 
     /** MultiDataSet constructor with single features/labels input, single mask arrays */
     public MultiDataSet(INDArray features, INDArray labels, INDArray featuresMask, INDArray labelsMask) {
-        this((features != null ? new INDArray[] {features} : null),
-                (labels != null ? new INDArray[] {labels} : null),
-                (featuresMask != null ? new INDArray[]{featuresMask} : null),
-                (labelsMask != null ? new INDArray[]{labelsMask} : null));
+        this((features != null ? new INDArray[] {features} : null), (labels != null ? new INDArray[] {labels} : null),
+                        (featuresMask != null ? new INDArray[] {featuresMask} : null),
+                        (labelsMask != null ? new INDArray[] {labelsMask} : null));
     }
 
     /** MultiDataSet constructor with no mask arrays */
@@ -223,7 +220,12 @@ public class MultiDataSet implements org.nd4j.linalg.dataset.api.MultiDataSet {
         if (arrays != null && arrays.length > 0) {
             for (INDArray fm : arrays) {
                 if (isMask && fm == null) {
-                    fm = EMPTY_MASK_ARRAY_PLACEHOLDER;
+                    INDArray temp = EMPTY_MASK_ARRAY_PLACEHOLDER.get();
+                    if(temp == null){
+                        EMPTY_MASK_ARRAY_PLACEHOLDER.set(Nd4j.create(new float[] {-1}));
+                        temp = EMPTY_MASK_ARRAY_PLACEHOLDER.get();
+                    }
+                    fm = temp;
                 }
                 Nd4j.write(fm, dos);
             }
@@ -375,16 +377,28 @@ public class MultiDataSet implements org.nd4j.linalg.dataset.api.MultiDataSet {
         else
             list = new ArrayList<>(toMerge);
 
+        int nonEmpty = 0;
+        for(org.nd4j.linalg.dataset.api.MultiDataSet mds : toMerge){
+            if(mds.isEmpty()){
+                continue;
+            }
+            nonEmpty++;
+        }
+
         int nInArrays = list.get(0).numFeatureArrays();
         int nOutArrays = list.get(0).numLabelsArrays();
 
-        INDArray[][] features = new INDArray[list.size()][0];
-        INDArray[][] labels = new INDArray[list.size()][0];
-        INDArray[][] featuresMasks = new INDArray[list.size()][0];
-        INDArray[][] labelsMasks = new INDArray[list.size()][0];
+        INDArray[][] features = new INDArray[nonEmpty][0];
+        INDArray[][] labels = new INDArray[nonEmpty][0];
+        INDArray[][] featuresMasks = new INDArray[nonEmpty][0];
+        INDArray[][] labelsMasks = new INDArray[nonEmpty][0];
 
         int i = 0;
         for (org.nd4j.linalg.dataset.api.MultiDataSet mds : list) {
+            if(mds.isEmpty()){
+                continue;
+            }
+
             features[i] = mds.getFeatures();
             labels[i] = mds.getLabels();
             featuresMasks[i] = mds.getFeaturesMaskArrays();
@@ -414,7 +428,7 @@ public class MultiDataSet implements org.nd4j.linalg.dataset.api.MultiDataSet {
 
         boolean needFeaturesMasks = false;
         for (i = 0; i < nInArrays; i++) {
-            Pair<INDArray, INDArray> pair = DataSetUtil.mergeFeatures(features, featuresMasks, i);  //merge(features, featuresMasks, i);
+            Pair<INDArray, INDArray> pair = DataSetUtil.mergeFeatures(features, featuresMasks, i); //merge(features, featuresMasks, i);
             mergedFeatures[i] = pair.getFirst();
             mergedFeaturesMasks[i] = pair.getSecond();
             if (mergedFeaturesMasks[i] != null)
@@ -440,25 +454,47 @@ public class MultiDataSet implements org.nd4j.linalg.dataset.api.MultiDataSet {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        int totalEntries = numFeatureArrays();
-        if (totalEntries != numLabelsArrays()) {
-            return "";
+        int nfMask = 0;
+        int nlMask = 0;
+        if(featuresMaskArrays != null){
+            for(INDArray i : featuresMaskArrays){
+                if(i != null){
+                    nfMask++;
+                }
+            }
         }
-        for (int i = 0; i < totalEntries; i++) {
-            builder.append("\n=========== ENTRY " + i + " =================\n");
-            builder.append("\n=== INPUT ===\n").append(getFeatures(i).toString().replaceAll(";", "\n"))
-                            .append("\n=== OUTPUT ===\n").append(getLabels(i).toString().replaceAll(";", "\n"));
+        if(labelsMaskArrays != null){
+            for(INDArray i : labelsMaskArrays){
+                if(i != null){
+                    nlMask++;
+                }
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("MultiDataSet: ").append(numFeatureArrays()).append(" input arrays, ")
+                .append(numLabelsArrays()).append(" label arrays, ")
+                .append(nfMask).append(" input masks, ")
+                .append(nlMask).append(" label masks");
+
+
+        for (int i = 0; i < numFeatureArrays(); i++) {
+            sb.append("\n=== INPUT ").append(i).append(" ===\n").append(getFeatures(i).toString().replaceAll(";", "\n"));
             if (getFeaturesMaskArray(i) != null) {
-                builder.append("\n=== INPUT MASK ===\n")
-                                .append(getFeaturesMaskArray(i).toString().replaceAll(";", "\n"));
-            }
-            if (getLabelsMaskArray(i) != null) {
-                builder.append("\n=== OUTPUT MASK ===\n")
-                                .append(getLabelsMaskArray(i).toString().replaceAll(";", "\n"));
+                sb.append("\n--- INPUT MASK ---\n")
+                        .append(getFeaturesMaskArray(i).toString().replaceAll(";", "\n"));
             }
         }
-        return builder.toString();
+        for( int i=0; i<numLabelsArrays(); i++){
+            sb.append("\n=== LABEL ").append(i).append(" ===\n")
+                    .append(getLabels(i).toString().replaceAll(";", "\n"));
+
+            if (getLabelsMaskArray(i) != null) {
+                sb.append("\n--- LABEL MASK ---\n")
+                        .append(getLabelsMaskArray(i).toString().replaceAll(";", "\n"));
+            }
+        }
+        return sb.toString();
     }
 
     @Override
@@ -529,19 +565,19 @@ public class MultiDataSet implements org.nd4j.linalg.dataset.api.MultiDataSet {
     public long getMemoryFootprint() {
         long reqMem = 0;
 
-        for (INDArray f: features)
+        for (INDArray f : features)
             reqMem += f == null ? 0 : f.lengthLong() * Nd4j.sizeOfDataType();
 
         if (featuresMaskArrays != null)
-            for (INDArray f: featuresMaskArrays)
+            for (INDArray f : featuresMaskArrays)
                 reqMem += f == null ? 0 : f.lengthLong() * Nd4j.sizeOfDataType();
 
         if (labelsMaskArrays != null)
-            for (INDArray f: labelsMaskArrays)
+            for (INDArray f : labelsMaskArrays)
                 reqMem += f == null ? 0 : f.lengthLong() * Nd4j.sizeOfDataType();
 
         if (labels != null)
-            for (INDArray f: labels)
+            for (INDArray f : labels)
                 reqMem += f == null ? 0 : f.lengthLong() * Nd4j.sizeOfDataType();
 
         return reqMem;
@@ -589,5 +625,34 @@ public class MultiDataSet implements org.nd4j.linalg.dataset.api.MultiDataSet {
         if (labelsMaskArrays != null)
             for (int e = 0; e < labelsMaskArrays.length; e++)
                 labelsMaskArrays[e] = labelsMaskArrays[e].detach();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return nullOrEmpty(features) && nullOrEmpty(labels) && nullOrEmpty(featuresMaskArrays) && nullOrEmpty(labelsMaskArrays);
+    }
+
+    @Override
+    public void shuffle() {
+        List<org.nd4j.linalg.dataset.api.MultiDataSet> split = asList();
+        Collections.shuffle(split);
+        MultiDataSet mds = merge(split);
+        this.features = mds.features;
+        this.labels = mds.labels;
+        this.featuresMaskArrays = mds.featuresMaskArrays;
+        this.labelsMaskArrays = mds.labelsMaskArrays;
+        this.exampleMetaData = mds.exampleMetaData;
+    }
+
+    private static boolean nullOrEmpty(INDArray[] arr){
+        if(arr == null){
+            return true;
+        }
+        for(INDArray i : arr){
+            if(i != null){
+                return false;
+            }
+        }
+        return true;
     }
 }

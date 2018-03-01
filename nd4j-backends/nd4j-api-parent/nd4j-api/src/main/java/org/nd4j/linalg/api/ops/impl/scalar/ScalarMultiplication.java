@@ -19,10 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.scalar;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseScalarOp;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Scalar multiplication
@@ -41,16 +44,26 @@ public class ScalarMultiplication extends BaseScalarOp {
         super(x, num);
     }
 
-    public ScalarMultiplication(INDArray x, INDArray y, INDArray z, long n, IComplexNumber num) {
-        super(x, y, z, n, num);
-    }
 
     public ScalarMultiplication(INDArray x) {
         this(x, 0);
     }
 
-    public ScalarMultiplication(INDArray x, IComplexNumber num) {
-        super(x, num);
+
+    public ScalarMultiplication(SameDiff sameDiff, SDVariable i_v, Number scalar) {
+        super(sameDiff, i_v, scalar);
+    }
+
+    public ScalarMultiplication(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace) {
+        super(sameDiff, i_v, scalar, inPlace);
+    }
+
+    public ScalarMultiplication(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, scalar, inPlace, extraArgs);
+    }
+
+    public ScalarMultiplication(SameDiff sameDiff, SDVariable i_v, Number scalar, Object[] extraArgs) {
+        super(sameDiff, i_v, scalar, extraArgs);
     }
 
     @Override
@@ -59,71 +72,26 @@ public class ScalarMultiplication extends BaseScalarOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "mul_scalar";
     }
-
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        if (complexNumber != null)
-            return origin.mul(complexNumber);
-        return complexNumber.mul(num);
+    public String onnxName() {
+        return "Mul";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        if (complexNumber != null)
-            return origin.mul(complexNumber);
-        return complexNumber.mul(num);
+    public String tensorflowName() {
+        return "RealMul";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        if (complexNumber != null)
-            return origin.mul(complexNumber);
-        return complexNumber.mul(num);
-    }
+
+
 
     @Override
-    public float op(float origin, float other) {
-        return (origin * num.floatValue());
-    }
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        SDVariable g = f().mul(i_v1.get(0),scalarValue.doubleValue());
 
-    @Override
-    public double op(double origin, double other) {
-        return origin * num.doubleValue();
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin * num.doubleValue();
-    }
-
-    @Override
-    public float op(float origin) {
-        return (origin * num.floatValue());
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        if (complexNumber != null)
-            return origin.mul(complexNumber);
-        return complexNumber.mul(num);
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        if (num != null)
-            return new ScalarMultiplication(x.vectorAlongDimension(index, dimension), num);
-        else
-            return new ScalarMultiplication(x.vectorAlongDimension(index, dimension), complexNumber);
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        if (num != null)
-            return new ScalarMultiplication(x.tensorAlongDimension(index, dimension), num);
-        else
-            return new ScalarMultiplication(x.tensorAlongDimension(index, dimension), complexNumber);
+        return Arrays.asList(g);
     }
 }

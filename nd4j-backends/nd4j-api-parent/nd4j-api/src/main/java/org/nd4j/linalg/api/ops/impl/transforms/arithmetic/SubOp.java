@@ -19,121 +19,52 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms.arithmetic;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
+import org.nd4j.linalg.api.ops.impl.transforms.BaseDynamicTransformOp;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Subtraction operation
  *
  * @author Adam Gibson
  */
-public class SubOp extends BaseTransformOp {
+public class SubOp extends BaseDynamicTransformOp {
+
     public SubOp() {}
 
-    public SubOp(INDArray x, INDArray y, INDArray z, long n) {
-        super(x, y, z, n);
+    public SubOp( SameDiff sameDiff, SDVariable[] args, boolean inPlace) {
+        super(sameDiff, args, inPlace);
     }
 
-    public SubOp(INDArray x) {
-        super(x);
-    }
-
-    public SubOp(INDArray x, INDArray z) {
-        super(x, z);
-    }
-
-    public SubOp(INDArray x, INDArray z, long n) {
-        super(x, z, n);
-    }
-
-    public SubOp(INDArray x, INDArray y, INDArray z) {
-        super(x, y, z, x.lengthLong());
-    }
-
-    @Override
-    public int opNum() {
-        return 9;
-    }
-
-    @Override
-    public String name() {
-        return "sub";
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin.sub(other);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin.sub(other);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin.sub(other);
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return origin - other;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return origin - other;
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin;
+    public SubOp( INDArray[] inputs, INDArray[] outputs) {
+        super(inputs, outputs);
     }
 
 
     @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-
-        if (y() != null)
-            return new SubOp(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new SubOp(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-
-        if (y() != null)
-            return new SubOp(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new SubOp(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
+    public String opName() {
+        return "subtract";
     }
 
 
     @Override
-    public void init(INDArray x, INDArray y, INDArray z, long n) {
-        super.init(x, y, z, n);
-        if (y == null)
-            throw new IllegalArgumentException("No components to subtract");
+    public String onnxName() {
+        return "Sub";
     }
+
+    @Override
+    public String tensorflowName() {
+        return "Sub";
+    }
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        return f().subBp(larg(), rarg(), i_v.get(0));
+    }
+
 }

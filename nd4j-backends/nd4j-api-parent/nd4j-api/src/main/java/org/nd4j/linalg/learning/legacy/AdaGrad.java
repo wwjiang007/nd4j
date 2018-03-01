@@ -104,7 +104,7 @@ public class AdaGrad implements Serializable {
      * Gets feature specific learning rates
      * Adagrad keeps a history of gradients being passed in.
      * Note that each gradient passed in becomes adapted over time, hence
-     * the name adagrad
+     * the opName adagrad
      *
      * @param gradient  the gradient to get learning rates for
      * @param iteration
@@ -131,7 +131,7 @@ public class AdaGrad implements Serializable {
         }
 
         double sqrtHistory = !historicalInitialized ? Math.sqrt(historicalGradient.getDouble(column))
-                : historicalGradient.getDouble(column);
+                        : historicalGradient.getDouble(column);
         double learningRates = learningRate / (sqrtHistory + epsilon);
         double adjustedGradient = gradient * (learningRates);
 
@@ -150,7 +150,7 @@ public class AdaGrad implements Serializable {
             this.historicalGradient = Nd4j.zeros(shape).add(epsilon);
             historicalInitialized = true;
         } else if (!this.historicalGradient.isVector()
-                && this.historicalGradient.slice(slice).length() != gradient.length())
+                        && this.historicalGradient.slice(slice).length() != gradient.length())
             throw new IllegalArgumentException("Illegal gradient");
 
         if (historicalGradient.isVector())

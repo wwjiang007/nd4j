@@ -19,13 +19,11 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.nd4j.linalg.api.complex.IComplexNDArray;
-import org.nd4j.linalg.api.complex.IComplexNumber;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.api.ops.TransformOp;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Soft max function
@@ -39,190 +37,45 @@ import org.nd4j.linalg.factory.Nd4j;
  * @author Adam Gibson
  */
 
-public class SoftMax extends BaseTransformOp {
-
-    public SoftMax() {}
-
-    public SoftMax(INDArray x, INDArray z) {
-        super(x, z);
+public class SoftMax extends BaseDynamicTransformOp {
+    public SoftMax() {
+        super();
     }
 
-    public SoftMax(INDArray x, INDArray z, long n) {
-        super(x, z, n);
+    public SoftMax(SameDiff sameDiff, SDVariable[] args) {
+        super(sameDiff, args, false);
     }
 
-    public SoftMax(INDArray x, INDArray y, INDArray z, long n) {
-        super(x, y, z, n);
+
+
+    public SoftMax(SameDiff sameDiff, SDVariable[] args, boolean inPlace) {
+        super(sameDiff, args, inPlace);
     }
 
-    public SoftMax(INDArray x, INDArray y, INDArray z) {
-        super(x, y, z, x.lengthLong());
-    }
-
-    public SoftMax(INDArray x) {
-        super(x);
-    }
 
     @Override
-    public int opNum() {
-        return 38;
-    }
-
-    @Override
-    public boolean isExecSpecial() {
-        return true;
-    }
-
-    @Override
-    public String name() {
+    public String opName() {
         return "softmax";
     }
 
+
+
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        IComplexNDArray arr = (IComplexNDArray) y;
-        if (numProcessed >= Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Number of processed elements can not be >= Integer.MAX_VALUE");
-        IComplexNumber ret = arr.getComplex((int) numProcessed);
-        numProcessed++;
-        return ret;
+    public String onnxName() {
+        return "Softmax";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        IComplexNDArray arr = (IComplexNDArray) y;
-        if (numProcessed >= Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Number of processed elements can not be >= Integer.MAX_VALUE");
-        IComplexNumber ret = arr.getComplex((int) numProcessed);
-        numProcessed++;
-        return ret;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        IComplexNDArray arr = (IComplexNDArray) y;
-        if (numProcessed >= Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Number of processed elements can not be >= Integer.MAX_VALUE");
-        IComplexNumber ret = arr.getComplex((int) numProcessed);
-        numProcessed++;
-        return ret;
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        float ret = other;
-        numProcessed++;
-        return ret;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        double ret = other;
-        numProcessed++;
-        return ret;
-    }
-
-    @Override
-    public double op(double origin) {
-        if (numProcessed >= Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Number of processed elements can not be >= Integer.MAX_VALUE");
-        double ret = y.getDouble((int) numProcessed);
-        numProcessed++;
-        return ret;
-    }
-
-    @Override
-    public float op(float origin) {
-        if (numProcessed >= Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Number of processed elements can not be >= Integer.MAX_VALUE");
-        float ret = (y.getFloat((int) numProcessed));
-        numProcessed++;
-        return ret;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        IComplexNDArray arr = (IComplexNDArray) y;
-        if (numProcessed >= Integer.MAX_VALUE)
-            throw new IllegalArgumentException("Number of processed elements can not be >= Integer.MAX_VALUE");
-        IComplexNumber ret = arr.getComplex((int) numProcessed);
-        numProcessed++;
-        return ret;
-    }
-
-    @Override
-    public TransformOp derivative() {
-        return new SoftMaxDerivative(x, y, z, n);
+    public String tensorflowName() {
+        return "Softmax";
     }
 
 
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-        if (y() != null)
-            return new SoftMax(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new SoftMax(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
 
     @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-        if (y() != null)
-            return new SoftMax(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new SoftMax(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        SDVariable ret = f().softmaxDerivative(arg(), i_v.get(0));
 
-    }
-
-    @Override
-    public void exec() {
-        exec(1);
-    }
-
-    @Override
-    public void init(INDArray x, INDArray y, INDArray z, long n) {
-        super.init(x, y, z, n);
-        passThrough = true;
-    }
-
-
-    @Override
-    public void exec(int... dimensions) {
-        if (dimensions[0] != 1)
-            throw new IllegalArgumentException("Only supports row wise calculations");
-        if (x.isMatrix()) {
-            INDArray maxAlongDimension = x.max(dimensions);
-            if (!maxAlongDimension.isVector() && !maxAlongDimension.isScalar())
-                throw new IllegalStateException("Max along dimension for input must either be a row vector or scalar");
-
-            INDArray xMinusMax = x.subColumnVector(maxAlongDimension);
-
-            INDArray exp;
-            if (z != null) {
-                exp = Nd4j.getExecutioner().execAndReturn(new Exp(xMinusMax, z));
-            } else {
-                exp = Nd4j.getExecutioner().execAndReturn(new Exp(xMinusMax));
-            }
-
-            INDArray sum = exp.sum(dimensions);
-            exp.diviColumnVector(sum);
-
-            if (z == null)
-                z = exp;
-        } else if (x.isVector()) {
-            double max = x.maxNumber().doubleValue();
-            INDArray exp;
-            if (z != null) {
-                exp = Nd4j.getExecutioner().execAndReturn(new Exp(x.sub(max), z));
-            } else {
-                exp = Nd4j.getExecutioner().execAndReturn(new Exp(x.sub(max)));
-            }
-            exp.divi(exp.sumNumber().doubleValue());
-            this.z = exp;
-        }
+        return Collections.singletonList(ret);
     }
 }

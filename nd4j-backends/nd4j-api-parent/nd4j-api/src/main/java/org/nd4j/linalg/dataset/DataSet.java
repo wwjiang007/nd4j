@@ -22,17 +22,14 @@ package org.nd4j.linalg.dataset;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.util.Pair;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.executioner.GridExecutioner;
 import org.nd4j.linalg.dataset.api.DataSetUtil;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.dataset.api.preprocessor.NormalizerStandardize;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
-import org.nd4j.linalg.indexing.INDArrayIndex;
-import org.nd4j.linalg.indexing.NDArrayIndex;
 import org.nd4j.linalg.indexing.conditions.Condition;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.util.ArrayUtil;
 import org.nd4j.linalg.util.FeatureUtil;
 import org.nd4j.linalg.util.MathUtils;
@@ -137,15 +134,6 @@ public class DataSet implements org.nd4j.linalg.dataset.api.DataSet {
         return new DataSet(null, null);
     }
 
-
-    /**
-     * @deprecated Use {@link #merge(List)}
-     */
-    @Deprecated
-    public static DataSet merge(List<DataSet> data, boolean clone) {
-        return merge(data);
-    }
-
     /**
      * Merge the list of datasets in to one list.
      * All the rows are merged in to one dataset
@@ -156,25 +144,48 @@ public class DataSet implements org.nd4j.linalg.dataset.api.DataSet {
     public static DataSet merge(List<DataSet> data) {
         if (data.isEmpty())
             throw new IllegalArgumentException("Unable to merge empty dataset");
-        DataSet first = data.get(0);
 
-        INDArray[] featuresToMerge = new INDArray[data.size()];
-        INDArray[] labelsToMerge = new INDArray[data.size()];
+        int nonEmpty = 0;
+        boolean anyFeaturesPreset = false;
+        boolean anyLabelsPreset = false;
+        boolean first = true;
+        for(DataSet ds : data){
+            if(ds.isEmpty()){
+                continue;
+            }
+            nonEmpty++;
+
+            if(anyFeaturesPreset && ds.getFeatures() == null || (!first && !anyFeaturesPreset && ds.getFeatures() != null)){
+                throw new IllegalStateException("Cannot merge features: encountered null features in one or more DataSets");
+            }
+            if(anyLabelsPreset && ds.getLabels() == null || (!first && !anyLabelsPreset && ds.getLabels() != null)){
+                throw new IllegalStateException("Cannot merge labels: enountered null labels in one or more DataSets");
+            }
+
+            anyFeaturesPreset |= ds.getFeatures() != null;
+            anyLabelsPreset |= ds.getLabels() != null;
+            first = false;
+        }
+
+        INDArray[] featuresToMerge = new INDArray[nonEmpty];
+        INDArray[] labelsToMerge = new INDArray[nonEmpty];
         INDArray[] featuresMasksToMerge = null;
         INDArray[] labelsMasksToMerge = null;
         int count = 0;
         for (DataSet ds : data) {
+            if(ds.isEmpty())
+                continue;
             featuresToMerge[count] = ds.getFeatureMatrix();
             labelsToMerge[count] = ds.getLabels();
 
-            if(ds.getFeaturesMaskArray() != null){
-                if(featuresMasksToMerge == null){
+            if (ds.getFeaturesMaskArray() != null) {
+                if (featuresMasksToMerge == null) {
                     featuresMasksToMerge = new INDArray[data.size()];
                 }
                 featuresMasksToMerge[count] = ds.getFeaturesMaskArray();
             }
-            if(ds.getLabelsMaskArray() != null){
-                if(labelsMasksToMerge == null){
+            if (ds.getLabelsMaskArray() != null) {
+                if (labelsMasksToMerge == null) {
                     labelsMasksToMerge = new INDArray[data.size()];
                 }
                 labelsMasksToMerge[count] = ds.getLabelsMaskArray();
@@ -188,11 +199,11 @@ public class DataSet implements org.nd4j.linalg.dataset.api.DataSet {
         INDArray featuresMaskOut;
         INDArray labelsMaskOut;
 
-        Pair<INDArray,INDArray> fp = DataSetUtil.mergeFeatures(featuresToMerge, featuresMasksToMerge);
+        Pair<INDArray, INDArray> fp = DataSetUtil.mergeFeatures(featuresToMerge, featuresMasksToMerge);
         featuresOut = fp.getFirst();
         featuresMaskOut = fp.getSecond();
 
-        Pair<INDArray,INDArray> lp = DataSetUtil.mergeLabels(labelsToMerge, labelsMasksToMerge);
+        Pair<INDArray, INDArray> lp = DataSetUtil.mergeLabels(labelsToMerge, labelsMasksToMerge);
         labelsOut = lp.getFirst();
         labelsMaskOut = lp.getSecond();
 
@@ -231,7 +242,8 @@ public class DataSet implements org.nd4j.linalg.dataset.api.DataSet {
     public void load(InputStream from) {
         try {
 
-            DataInputStream dis = from instanceof BufferedInputStream ? new DataInputStream(from) : new DataInputStream(new BufferedInputStream(from));
+            DataInputStream dis = from instanceof BufferedInputStream ? new DataInputStream(from)
+                            : new DataInputStream(new BufferedInputStream(from));
 
             byte included = dis.readByte();
             boolean hasFeatures = (included & BITMASK_FEATURES_PRESENT) != 0;
@@ -260,7 +272,8 @@ public class DataSet implements org.nd4j.linalg.dataset.api.DataSet {
 
     @Override
     public void load(File from) {
-        try (FileInputStream fis = new FileInputStream(from); BufferedInputStream bis = new BufferedInputStream(fis, 1024 * 1024)) {
+        try (FileInputStream fis = new FileInputStream(from);
+                        BufferedInputStream bis = new BufferedInputStream(fis, 1024 * 1024)) {
             load(bis);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -921,7 +934,7 @@ public class DataSet implements org.nd4j.linalg.dataset.api.DataSet {
 
     /**
      * @param idx the index to pullRows the string label value out of the list if it exists
-     * @return the label name
+     * @return the label opName
      */
     @Override
     public String getLabelName(int idx) {
@@ -939,7 +952,7 @@ public class DataSet implements org.nd4j.linalg.dataset.api.DataSet {
 
     /**
      * @param idxs list of index to pullRows the string label value out of the list if it exists
-     * @return the label name
+     * @return the label opName
      */
     @Override
     public List<String> getLabelNames(INDArray idxs) {
@@ -1355,6 +1368,13 @@ public class DataSet implements org.nd4j.linalg.dataset.api.DataSet {
             featuresMask = featuresMask.detach();
 
         if (labelsMask != null)
-           labelsMask = labelsMask.detach();
+            labelsMask = labelsMask.detach();
     }
+
+    @Override
+    public boolean isEmpty() {
+        return features == null && labels == null && featuresMask == null && labelsMask == null;
+    }
+
+
 }

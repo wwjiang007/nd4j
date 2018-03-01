@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.nd4j.linalg.api.memory.MemoryWorkspace;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSetUtil;
 import org.nd4j.linalg.factory.Nd4j;
@@ -14,7 +15,7 @@ import java.util.Arrays;
 
 /**
  * Statistics about the lower bounds and upper bounds of values in data.
- * Can be constructed incrementally by using the Builder,
+ * Can be constructed incrementally by using the DynamicCustomOpsBuilder,
  * which is useful for obtaining these statistics from an
  * iterator.
  *
@@ -59,13 +60,15 @@ public class MinMaxStats implements NormalizerStats {
      */
     public INDArray getRange() {
         if (range == null) {
-            range = upper.sub(lower);
+            try (MemoryWorkspace ws = Nd4j.getMemoryManager().scopeOutOfWorkspaces()) {
+                range = upper.sub(lower);
+            }
         }
         return range;
     }
 
     /**
-     * Builder class that can incrementally update a running lower and upper bound in order to create statistics for a
+     * DynamicCustomOpsBuilder class that can incrementally update a running lower and upper bound in order to create statistics for a
      * large set of data
      */
     public static class Builder implements NormalizerStats.Builder<MinMaxStats> {
@@ -129,7 +132,9 @@ public class MinMaxStats implements NormalizerStats {
             if (runningLower == null) {
                 throw new RuntimeException("No data was added, statistics cannot be determined");
             }
-            return new MinMaxStats(runningLower.dup(), runningUpper.dup());
+            try (MemoryWorkspace workspace = Nd4j.getMemoryManager().scopeOutOfWorkspaces()) {
+                return new MinMaxStats(runningLower.dup(), runningUpper.dup());
+            }
         }
     }
 }

@@ -20,19 +20,50 @@
 package org.nd4j.linalg.api.ops.impl.transforms;
 
 import lombok.NonNull;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * Boolean AND pairwise transform
+ * Boolean OR pairwise transform
  *
  * @author raver119@gmail.com
  */
 public class Or extends BaseTransformOp {
 
-    protected double comparable;
+    protected double comparable = 0.0;
+
+    public Or(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2) {
+        super(sameDiff, i_v1, i_v2);
+        this.extraArgs = new Object[] {this.comparable};
+    }
+
+    public Or(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, boolean inPlace) {
+        super(sameDiff, i_v1, i_v2, inPlace);
+        this.extraArgs = new Object[] {this.comparable};
+    }
+
+    public Or(SameDiff sameDiff, SDVariable i_v, boolean inPlace, double comparable) {
+        super(sameDiff, i_v, inPlace);
+        this.comparable = comparable;
+        this.extraArgs = new Object[] {this.comparable};
+    }
+
+    public Or(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs, double comparable) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+        this.comparable = comparable;
+        this.extraArgs = new Object[] {this.comparable};
+    }
+
+    public Or(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs, double comparable) {
+        super(sameDiff, i_v, extraArgs);
+        this.comparable = comparable;
+        this.extraArgs = new Object[] {this.comparable};
+    }
 
     public Or() {}
 
@@ -73,69 +104,23 @@ public class Or extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "boolean_or";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return null;
+    public String onnxName() {
+        return "Or";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return null;
+    public String tensorflowName() {
+        return "LogicalOr";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return null;
-    }
 
     @Override
-    public float op(float origin, float other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin) {
-        return 0;
-    }
-
-    @Override
-    public float op(float origin) {
-        return 0;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return null;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-        if (y() != null)
-            return new Or(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Or(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-        if (y() != null)
-            return new Or(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Or(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        return Arrays.asList( sameDiff.zerosLike(larg()), sameDiff.zerosLike(rarg()));
     }
 }

@@ -59,7 +59,7 @@ public class UpdaterTest extends BaseNd4jTest {
         int cols = 2;
 
 
-        NesterovsUpdater grad = new NesterovsUpdater(new Nesterovs(0.5, 0.9, null));
+        NesterovsUpdater grad = new NesterovsUpdater(new Nesterovs(0.5, 0.9));
         grad.setStateViewArray(Nd4j.zeros(1, rows * cols), new int[] {rows, cols}, 'c', true);
         INDArray W = Nd4j.zeros(rows, cols);
         Distribution dist = Nd4j.getDistributions().createNormal(1, 1);
@@ -67,8 +67,8 @@ public class UpdaterTest extends BaseNd4jTest {
             W.putRow(i, Nd4j.create(dist.sample(W.columns())));
 
         for (int i = 0; i < 5; i++) {
-//            String learningRates = String.valueOf("\nAdagrad\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
-//            System.out.println(learningRates);
+            //            String learningRates = String.valueOf("\nAdagrad\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
+            //            System.out.println(learningRates);
             W.addi(Nd4j.randn(rows, cols));
         }
     }
@@ -80,7 +80,7 @@ public class UpdaterTest extends BaseNd4jTest {
         int cols = 2;
 
 
-        AdaGradUpdater grad = new AdaGradUpdater(new AdaGrad(0.1,AdaGrad.DEFAULT_ADAGRAD_EPSILON));
+        AdaGradUpdater grad = new AdaGradUpdater(new AdaGrad(0.1, AdaGrad.DEFAULT_ADAGRAD_EPSILON));
         grad.setStateViewArray(Nd4j.zeros(1, rows * cols), new int[] {rows, cols}, 'c', true);
         INDArray W = Nd4j.zeros(rows, cols);
         Distribution dist = Nd4j.getDistributions().createNormal(1, 1);
@@ -88,8 +88,8 @@ public class UpdaterTest extends BaseNd4jTest {
             W.putRow(i, Nd4j.create(dist.sample(W.columns())));
 
         for (int i = 0; i < 5; i++) {
-//            String learningRates = String.valueOf("\nAdagrad\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
-//            System.out.println(learningRates);
+            //            String learningRates = String.valueOf("\nAdagrad\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
+            //            System.out.println(learningRates);
             W.addi(Nd4j.randn(rows, cols));
         }
 
@@ -109,8 +109,8 @@ public class UpdaterTest extends BaseNd4jTest {
             W.putRow(i, Nd4j.create(dist.sample(W.columns())));
 
         for (int i = 0; i < 5; i++) {
-//            String learningRates = String.valueOf("\nAdaelta\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
-//            System.out.println(learningRates);
+            //            String learningRates = String.valueOf("\nAdaelta\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
+            //            System.out.println(learningRates);
             W.addi(Nd4j.randn(rows, cols));
         }
     }
@@ -129,8 +129,27 @@ public class UpdaterTest extends BaseNd4jTest {
             W.putRow(i, Nd4j.create(dist.sample(W.columns())));
 
         for (int i = 0; i < 5; i++) {
-//            String learningRates = String.valueOf("\nAdamUpdater\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
-//            System.out.println(learningRates);
+            //            String learningRates = String.valueOf("\nAdamUpdater\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
+            //            System.out.println(learningRates);
+            W.addi(Nd4j.randn(rows, cols));
+        }
+    }
+
+    @Test
+    public void testNadam() {
+        int rows = 10;
+        int cols = 2;
+
+        NadamUpdater grad = new NadamUpdater(new Nadam());
+        grad.setStateViewArray(Nd4j.zeros(1, 2 * rows * cols), new int[] {rows, cols}, 'c', true);
+        INDArray W = Nd4j.zeros(rows, cols);
+        Distribution dist = Nd4j.getDistributions().createNormal(1e-3, 1e-3);
+        for (int i = 0; i < W.rows(); i++)
+            W.putRow(i, Nd4j.create(dist.sample(W.columns())));
+
+        for (int i = 0; i < 5; i++) {
+            //            String learningRates = String.valueOf("\nAdamUpdater\n " + grad.applyUpdater(W, i)).replaceAll(";", "\n");
+            //            System.out.println(learningRates);
             W.addi(Nd4j.randn(rows, cols));
         }
     }
@@ -149,8 +168,8 @@ public class UpdaterTest extends BaseNd4jTest {
             W.putRow(i, Nd4j.create(dist.sample(W.columns())));
 
         for (int i = 0; i < 5; i++) {
-//            String learningRates = String.valueOf("\nAdaMax\n " + grad.getGradient(W, i)).replaceAll(";", "\n");
-//            System.out.println(learningRates);
+            //            String learningRates = String.valueOf("\nAdaMax\n " + grad.getGradient(W, i)).replaceAll(";", "\n");
+            //            System.out.println(learningRates);
             W.addi(Nd4j.randn(rows, cols));
         }
     }

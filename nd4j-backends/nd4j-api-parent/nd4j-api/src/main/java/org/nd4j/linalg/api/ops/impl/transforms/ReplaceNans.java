@@ -19,10 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.List;
 
 /**
  * Element-wise "Replace NaN" implementation as Op
@@ -32,6 +35,21 @@ import org.nd4j.linalg.api.ops.Op;
 public class ReplaceNans extends BaseTransformOp {
 
     private double set;
+
+    public ReplaceNans(SameDiff sameDiff, SDVariable i_v, boolean inPlace, double set) {
+        super(sameDiff, i_v, inPlace);
+        this.set = set;
+    }
+
+    public ReplaceNans(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs, double set) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+        this.set = set;
+    }
+
+    public ReplaceNans(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs, double set) {
+        super(sameDiff, i_v, extraArgs);
+        this.set = set;
+    }
 
     public ReplaceNans() {
 
@@ -61,80 +79,31 @@ public class ReplaceNans extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "replace_nans";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return null;
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return null;
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return null;
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin) {
-        return 0;
-    }
-
-    @Override
-    public float op(float origin) {
-        return 0;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return null;
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new ReplaceNans(xAlongDimension, z.vectorAlongDimension(index, dimension), set,
-                            xAlongDimension.length());
-        else
-            return new ReplaceNans(xAlongDimension, z.vectorAlongDimension(index, dimension), set,
-                            xAlongDimension.length());
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new ReplaceNans(xAlongDimension, z.tensorAlongDimension(index, dimension), set,
-                            xAlongDimension.length());
-        else
-            return new ReplaceNans(xAlongDimension, z.tensorAlongDimension(index, dimension), set,
-                            xAlongDimension.length());
-
-    }
 
     @Override
     public void init(INDArray x, INDArray y, INDArray z, long n) {
         super.init(x, y, z, n);
         this.extraArgs = new Object[] {set, (double) n};
+    }
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
 }
 

@@ -31,13 +31,13 @@ public class CompressedDataBuffer extends BaseDataBuffer {
         this.compressionDescriptor = descriptor;
         this.pointer = pointer;
         this.length = descriptor.getNumberOfElements();
-        this.elementSize = (int) descriptor.getOriginalElementSize();
+        this.elementSize = (byte) descriptor.getOriginalElementSize();
 
         initTypeAndSize();
     }
 
     /**
-     * Initialize the type of this buffer
+     * Initialize the opType of this buffer
      */
     @Override
     protected void initTypeAndSize() {
@@ -130,7 +130,7 @@ public class CompressedDataBuffer extends BaseDataBuffer {
     /**
      * Create with length
      *
-     * @param length a databuffer of the same type as
+     * @param length a databuffer of the same opType as
      *               this with the given length
      * @return a data buffer with the same length and datatype as this one
      */

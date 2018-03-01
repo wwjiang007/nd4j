@@ -6,6 +6,7 @@ import lombok.Data;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.learning.AdaDeltaUpdater;
 import org.nd4j.linalg.learning.GradientUpdater;
+import org.nd4j.linalg.schedule.ISchedule;
 
 import java.util.Arrays;
 
@@ -27,21 +28,16 @@ public class AdaDelta implements IUpdater {
     public static final double DEFAULT_ADADELTA_RHO = 0.95;
     public static final double DEFAULT_ADADELTA_EPSILON = 1e-6;
 
-    private double rho;
-    private double epsilon;
+    @lombok.Builder.Default private double rho = DEFAULT_ADADELTA_RHO;
+    @lombok.Builder.Default private double epsilon = DEFAULT_ADADELTA_EPSILON;
 
-    public AdaDelta(){
+    public AdaDelta() {
         this(DEFAULT_ADADELTA_RHO, DEFAULT_ADADELTA_EPSILON);
     }
 
     @Override
     public long stateSize(long numParams) {
         return 2 * numParams;
-    }
-
-    @Override
-    public void applySchedules(int iteration, double newLearningRate) {
-        //No op - AdaDelta doesn't use LR
     }
 
     @Override
@@ -59,13 +55,23 @@ public class AdaDelta implements IUpdater {
         return new AdaDelta(rho, epsilon);
     }
 
-    //Partial builder class implementation for default values & public no-arg constructor
-    //https://reinhard.codes/2016/07/13/using-lomboks-builder-annotation-with-default-values/
-    public static class Builder {
-        private double rho = DEFAULT_ADADELTA_RHO;
-        private double epsilon = DEFAULT_ADADELTA_EPSILON;
+    @Override
+    public double getLearningRate(int iteration, int epoch) {
+        return Double.NaN;  //No LR for  this updater
+    }
 
-        public Builder() {
-        }
+    @Override
+    public boolean hasLearningRate() {
+        return true;
+    }
+
+    @Override
+    public void setLrAndSchedule(double lr, ISchedule lrSchedule) {
+        throw new UnsupportedOperationException("Cannot set learning rate or LR schedule: AdaDelta does not have a learning rate");
+    }
+
+    //Partial builder implementation to give public no-arg constructor
+    public static class Builder {
+        public Builder(){ }
     }
 }

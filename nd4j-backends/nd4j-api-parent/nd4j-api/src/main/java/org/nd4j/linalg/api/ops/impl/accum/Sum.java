@@ -19,17 +19,32 @@
 
 package org.nd4j.linalg.api.ops.impl.accum;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import lombok.extern.slf4j.Slf4j;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseAccumulation;
-import org.nd4j.linalg.api.ops.Op;
+import org.nd4j.linalg.api.shape.Shape;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Sum the components
  *
  * @author Adam Gibson
  */
+@Slf4j
 public class Sum extends BaseAccumulation {
+    public Sum(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public Sum(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
+
+
 
     public Sum() {}
 
@@ -54,99 +69,41 @@ public class Sum extends BaseAccumulation {
     }
 
     @Override
-    public double update(double accum, double x) {
-        return accum + x;
-    }
-
-    @Override
-    public double update(double accum, double x, double y) {
-        return accum + x;
-    }
-
-    @Override
-    public float update(float accum, float x) {
-        return accum + x;
-    }
-
-    @Override
-    public float update(float accum, float x, float y) {
-        return accum + x;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x, double y) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, IComplexNumber y) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, double y) {
-        return accum.add(x);
-    }
-
-
-    @Override
     public int opNum() {
         return 1;
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "sum";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return null;
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        //Out = sum(in)
+        // dL/dIn = dL/dOut * dOut/dIn
+        //        = dL/dOut * 1
+        // But broadcast to shape of the input
+
+        int origRank = Shape.rankFromShape(arg().getShape());   //TODO shape may not always be defined?
+        SDVariable broadcastable = sameDiff.f().reductionBroadcastableWithOrigShape(origRank, dimensions, i_v1.get(0));
+        SDVariable ret = sameDiff.onesLike(arg()).mul(broadcastable);
+        return Collections.singletonList(ret);
+    }
+
+
+    @Override
+    public String onnxName() {
+       return "Sum";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return null;
+    public String tensorflowName() {
+        return "Sum";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return null;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Sum(xAlongDimension, y.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Sum(xAlongDimension);
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Sum(xAlongDimension, y.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Sum(xAlongDimension);
+    public Type getOpType() {
+        return Type.REDUCE;
     }
 }

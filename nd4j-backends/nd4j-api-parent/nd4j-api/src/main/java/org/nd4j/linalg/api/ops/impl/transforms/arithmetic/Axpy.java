@@ -19,10 +19,15 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms.arithmetic;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *  Level 1 blas op Axpy as libnd4j native op
@@ -32,6 +37,41 @@ import org.nd4j.linalg.api.ops.Op;
 public class Axpy extends BaseTransformOp {
 
     private double p;
+
+    public Axpy(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, double p) {
+        super(sameDiff, i_v1, i_v2);
+        this.p = p;
+    }
+
+    public Axpy(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, boolean inPlace, double p) {
+        super(sameDiff, i_v1, i_v2, inPlace);
+        this.p = p;
+    }
+
+    public Axpy(SameDiff sameDiff, double p) {
+        super(sameDiff);
+        this.p = p;
+    }
+
+    public Axpy(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, Object[] extraArgs, double p) {
+        super(sameDiff, i_v1, i_v2, extraArgs);
+        this.p = p;
+    }
+
+    public Axpy(SameDiff sameDiff, SDVariable i_v, boolean inPlace, double p) {
+        super(sameDiff, i_v, inPlace);
+        this.p = p;
+    }
+
+    public Axpy(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs, double p) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+        this.p = p;
+    }
+
+    public Axpy(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs, double p) {
+        super(sameDiff, i_v, extraArgs);
+        this.p = p;
+    }
 
     public Axpy() {
 
@@ -61,71 +101,28 @@ public class Axpy extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "axpy";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return null;
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return null;
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return null;
+    public Map<String, Object> propertiesForFunction() {
+        Map<String,Object> ret = new LinkedHashMap<>();
+        ret.put("p",p);
+        return ret;
     }
 
-    @Override
-    public float op(float origin, float other) {
-        return 0;
-    }
 
-    @Override
-    public double op(double origin, double other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin) {
-        return 0;
-    }
-
-    @Override
-    public float op(float origin) {
-        return 0;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return null;
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Axpy(xAlongDimension, z.vectorAlongDimension(index, dimension), p, xAlongDimension.length());
-        else
-            throw new IllegalStateException("op.Y can't be null");
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Axpy(xAlongDimension, z.tensorAlongDimension(index, dimension), p, xAlongDimension.length());
-        else
-            throw new IllegalStateException("op.Y can't be null");
-
-    }
 
     @Override
     public void init(INDArray x, INDArray y, INDArray z, long n) {
@@ -136,5 +133,11 @@ public class Axpy extends BaseTransformOp {
                             + "], Z: [" + z.lengthLong() + "], N: [" + n + "]");
 
         this.extraArgs = new Object[] {p, (double) n};
+    }
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
 }

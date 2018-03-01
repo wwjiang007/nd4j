@@ -19,11 +19,15 @@
 
 package org.nd4j.linalg.api.ops.impl.accum.distances;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseAccumulation;
-import org.nd4j.linalg.api.ops.Op;
+import org.nd4j.linalg.api.shape.Shape;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Euclidean distance
@@ -31,6 +35,16 @@ import org.nd4j.linalg.api.ops.Op;
  * @author Adam Gibson
  */
 public class EuclideanDistance extends BaseAccumulation {
+    public static final String OP_NAME = "euclidean";
+
+    public EuclideanDistance(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public EuclideanDistance(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
+
     public EuclideanDistance() {}
 
     public EuclideanDistance(INDArray x, INDArray y, INDArray z, long n) {
@@ -61,69 +75,24 @@ public class EuclideanDistance extends BaseAccumulation {
         extraArgs[1] = 0.0f;
     }
 
-    @Override
-    public double update(double accum, double x) {
-        return accum + (x * x);
+    public EuclideanDistance(INDArray x, INDArray y, boolean allDistances) {
+        this(x, y);
+        this.isComplex = allDistances;
+    }
+
+    public EuclideanDistance(INDArray x, INDArray y, INDArray z, boolean allDistances) {
+        this(x, y, z, x.lengthLong());
+        this.isComplex = allDistances;
     }
 
     @Override
-    public double update(double accum, double x, double y) {
-        double d = (x - y);
-        return accum + d * d;
+    public Type opType() {
+        return Type.REDUCE3;
     }
 
     @Override
-    public float update(float accum, float x) {
-        return accum + (x * x);
-    }
-
-    @Override
-    public float update(float accum, float x, float y) {
-        float f = (x - y);
-        return accum + f * f;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x) {
-        return accum;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x, double y) {
-        double d = (x - y);
-        return accum.add(d * d);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x) {
-        return accum;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, IComplexNumber y) {
-        IComplexNumber c = x.sub(y);
-        return accum.add(c.mul(c));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, double y) {
-        IComplexNumber c = x.sub(y);
-        return accum.add(c.mul(c));
-    }
-
-    @Override
-    public double combineSubResults(double first, double second) {
-        return first + second;
-    }
-
-    @Override
-    public float combineSubResults(float first, float second) {
-        return first + second;
-    }
-
-    @Override
-    public IComplexNumber combineSubResults(IComplexNumber first, IComplexNumber second) {
-        return first.add(second);
+    public Type getOpType() {
+        return opType();
     }
 
     @Override
@@ -132,124 +101,40 @@ public class EuclideanDistance extends BaseAccumulation {
     }
 
     @Override
-    public String name() {
-        return "euclidean";
+    public String opName() {
+        return OP_NAME;
     }
 
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        numProcessed++;
-        return origin.sub(other);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        numProcessed++;
-        return origin.sub(other);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        numProcessed++;
-        return origin.sub(other);
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        numProcessed++;
-        return origin - other;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        numProcessed++;
-        return origin - other;
-    }
-
-    @Override
-    public double op(double origin) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xForDimension = x.vectorAlongDimension(index, dimension);
-        EuclideanDistance ret;
-        if (y() != null)
-            ret = new EuclideanDistance(xForDimension, y.vectorAlongDimension(index, dimension),
-                            xForDimension.length());
-        else
-            ret = new EuclideanDistance(x.vectorAlongDimension(index, dimension));
-        ret.setApplyFinalTransform(applyFinalTransform());
-        return ret;
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xForDimension = x.tensorAlongDimension(index, dimension);
-        EuclideanDistance ret;
-        if (y() != null)
-            ret = new EuclideanDistance(xForDimension, y.tensorAlongDimension(index, dimension),
-                            xForDimension.length());
-        else
-            ret = new EuclideanDistance(x.tensorAlongDimension(index, dimension));
-        ret.setApplyFinalTransform(applyFinalTransform());
-        return ret;
-    }
-
-    @Override
-    public double getAndSetFinalResult(double accum) {
-        if (applyFinalTransform()) {
-            double d = FastMath.sqrt(accum);
-            this.finalResult = d;
-            return d;
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        //ddist(x,y)/dxi = (xi-yi)/dist(x,y)
+        SDVariable euc = outputVariables()[0];
+        SDVariable difference = larg().sub(rarg());
+        SDVariable divBroadcastable;
+        int origRank = Shape.rankFromShape(arg().getShape());   //TODO shape may not always be defined?
+        if(!(dimensions.length == 1 && dimensions[0] == Integer.MAX_VALUE) ){
+            //1x1 output case
+            divBroadcastable = i_v1.get(0).div(euc);
         } else {
-            this.finalResult = accum;
-            return accum;
+            divBroadcastable = f().reductionBroadcastableWithOrigShape(origRank, dimensions, i_v1.get(0).div(euc));
         }
 
+        SDVariable gradX = difference.mul(divBroadcastable);
+        SDVariable gradY = f().neg(gradX);
+        return Arrays.asList(gradX, gradY);
     }
 
     @Override
-    public float getAndSetFinalResult(float accum) {
-        if (applyFinalTransform) {
-            float f = (float) FastMath.sqrt(accum);
-            this.finalResult = f;
-            return f;
-        } else {
-            this.finalResult = accum;
-            return accum;
-        }
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
 
     }
 
     @Override
-    public IComplexNumber getAndSetFinalResult(IComplexNumber accum) {
-        this.finalResultComplex = accum.sqrt();
-        return finalResultComplex;
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
     }
 
-    @Override
-    public double calculateFinalResult(double accum, long n) {
-        return FastMath.sqrt(accum);
-    }
 
-    @Override
-    public float calculateFinalResult(float accum, long n) {
-        return (float) FastMath.sqrt(accum);
-    }
 }

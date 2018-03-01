@@ -19,11 +19,19 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import onnx.OnnxProto3;
+import org.nd4j.autodiff.functions.DifferentialFunction;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.api.ops.TransformOp;
+import org.tensorflow.framework.AttrValue;
+import org.tensorflow.framework.GraphDef;
+import org.tensorflow.framework.NodeDef;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * RectifiedTanh
@@ -33,6 +41,17 @@ import org.nd4j.linalg.api.ops.TransformOp;
  * @author raver119@gmail.com
  */
 public class RectifiedTanh extends BaseTransformOp {
+    public RectifiedTanh(SameDiff sameDiff, SDVariable i_v, boolean inPlace) {
+        super(sameDiff, i_v, inPlace);
+    }
+
+    public RectifiedTanh(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+    }
+
+    public RectifiedTanh(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs) {
+        super(sameDiff, i_v, extraArgs);
+    }
 
     public RectifiedTanh() {}
 
@@ -62,76 +81,33 @@ public class RectifiedTanh extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "rectified_tanh";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
+    }
+
+    @Override
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
+    }
+
+    @Override
+    public void initFromTensorFlow(NodeDef nodeDef, SameDiff initWith, Map<String, AttrValue> attributesForNode, GraphDef graph) {
+        super.initFromTensorFlow(nodeDef, initWith, attributesForNode, graph);
+    }
+
+    @Override
+    public void initFromOnnx(OnnxProto3.NodeProto node, SameDiff initWith, Map<String, OnnxProto3.AttributeProto> attributesForNode, OnnxProto3.GraphProto graph) {
+        super.initFromOnnx(node, initWith, attributesForNode, graph);
+    }
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
         return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return null;
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin) {
-        return 0;
-    }
-
-    @Override
-    public float op(float origin) {
-        return 0;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return null;
-    }
-
-    @Override
-    public TransformOp derivative() {
-        return new RationalTanhDerivative(x, y, z, n);
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-        if (y() != null)
-            return new RectifiedTanh(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new RectifiedTanh(xAlongDimension, z.vectorAlongDimension(index, dimension),
-                            xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-        if (y() != null)
-            return new RectifiedTanh(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new RectifiedTanh(xAlongDimension, z.tensorAlongDimension(index, dimension),
-                            xAlongDimension.length());
-
     }
 }

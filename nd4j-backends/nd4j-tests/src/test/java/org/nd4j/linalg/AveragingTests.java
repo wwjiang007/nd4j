@@ -1,7 +1,7 @@
 package org.nd4j.linalg;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(Parameterized.class)
 public class AveragingTests extends BaseNd4jTest {
     private final int THREADS = 16;
-    private final int LENGTH = 5120000 * 4;
+    private final int LENGTH = 51200 * 4;
 
     DataBuffer.Type initialType;
 
@@ -71,7 +71,8 @@ public class AveragingTests extends BaseNd4jTest {
 
 
         long time1 = System.currentTimeMillis();
-        INDArray arrayMean = Nd4j.averageAndPropagate(new INDArray[] {array1, array2, array3, array4, array5, array6, array7, array8, array9, array10, array11, array12, array13, array14, array15, array16});
+        INDArray arrayMean = Nd4j.averageAndPropagate(new INDArray[] {array1, array2, array3, array4, array5, array6,
+                        array7, array8, array9, array10, array11, array12, array13, array14, array15, array16});
         long time2 = System.currentTimeMillis();
         System.out.println("Execution time: " + (time2 - time1));
 
@@ -111,6 +112,54 @@ public class AveragingTests extends BaseNd4jTest {
             assertEquals(exp, arrays.get(i));
     }
 
+
+
+    @Test
+    public void testAccumulation1() {
+        INDArray array1 = Nd4j.create(100).assign(1.0);
+        INDArray array2 = Nd4j.create(100).assign(2.0);
+        INDArray array3 = Nd4j.create(100).assign(3.0);
+        INDArray exp = Nd4j.create(100).assign(6.0);
+
+        INDArray accum = Nd4j.accumulate(new INDArray[] {array1, array2, array3});
+
+        assertEquals(exp, accum);
+    }
+
+
+    @Test
+    public void testAccumulation2() {
+        INDArray array1 = Nd4j.create(100).assign(1.0);
+        INDArray array2 = Nd4j.create(100).assign(2.0);
+        INDArray array3 = Nd4j.create(100).assign(3.0);
+        INDArray target = Nd4j.create(100);
+        INDArray exp = Nd4j.create(100).assign(6.0);
+
+        INDArray accum = Nd4j.accumulate(target, new INDArray[] {array1, array2, array3});
+
+        assertEquals(exp, accum);
+        assertTrue(accum == target);
+    }
+
+
+    @Test
+    public void testAccumulation3() {
+        // we want to ensure that cuda backend is able to launch this op on cpu
+        Nd4j.getAffinityManager().allowCrossDeviceAccess(false);
+
+        INDArray array1 = Nd4j.create(100).assign(1.0);
+        INDArray array2 = Nd4j.create(100).assign(2.0);
+        INDArray array3 = Nd4j.create(100).assign(3.0);
+        INDArray target = Nd4j.create(100);
+        INDArray exp = Nd4j.create(100).assign(6.0);
+
+        INDArray accum = Nd4j.accumulate(target, new INDArray[] {array1, array2, array3});
+
+        assertEquals(exp, accum);
+        assertTrue(accum == target);
+
+        Nd4j.getAffinityManager().allowCrossDeviceAccess(true);
+    }
 
     @Override
     public char ordering() {

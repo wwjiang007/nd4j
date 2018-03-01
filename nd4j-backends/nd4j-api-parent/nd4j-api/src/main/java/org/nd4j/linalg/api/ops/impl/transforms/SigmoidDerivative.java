@@ -19,13 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexDouble;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+
+import java.util.List;
 
 /**
  * Sigmoid derivative
@@ -33,6 +33,25 @@ import org.nd4j.linalg.factory.Nd4j;
  * @author Adam Gibson
  */
 public class SigmoidDerivative extends BaseTransformOp {
+    public SigmoidDerivative(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2) {
+        super(sameDiff, i_v1, i_v2);
+    }
+
+    public SigmoidDerivative(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, boolean inPlace) {
+        super(sameDiff, i_v1, i_v2, inPlace);
+    }
+
+    public SigmoidDerivative(SameDiff sameDiff, SDVariable i_v, boolean inPlace) {
+        super(sameDiff, i_v, inPlace);
+    }
+
+    public SigmoidDerivative(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+    }
+
+    public SigmoidDerivative(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs) {
+        super(sameDiff, i_v, extraArgs);
+    }
 
     public SigmoidDerivative() {}
 
@@ -58,93 +77,22 @@ public class SigmoidDerivative extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
-        return "sigmoidderivative";
+    public String opName() {
+        return "_sigmoidderivative";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return sigmoidDeriv(origin);
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return sigmoidDeriv(origin);
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return sigmoidDeriv(origin);
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return (float) sigmoidDeriv(origin);
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return sigmoidDeriv(origin);
-    }
-
-    @Override
-    public double op(double origin) {
-        return sigmoidDeriv(origin);
-    }
-
-    @Override
-    public float op(float origin) {
-        return (float) sigmoidDeriv(origin);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return sigmoidDeriv(origin);
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new SigmoidDerivative(x.vectorAlongDimension(index, dimension),
-                            y.vectorAlongDimension(index, dimension), z.vectorAlongDimension(index, dimension),
-                            xAlongDimension.length());
-        else
-            return new SigmoidDerivative(x.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new SigmoidDerivative(x.tensorAlongDimension(index, dimension),
-                            y.tensorAlongDimension(index, dimension), z.tensorAlongDimension(index, dimension),
-                            xAlongDimension.length());
-        else
-            return new SigmoidDerivative(x.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    private static double sigmoidDeriv(double input) {
-        double sigmoid = 1 / (1 + FastMath.exp(-input));
-        double out = sigmoid * (1.0 - sigmoid);
-        if (Nd4j.ENFORCE_NUMERICAL_STABILITY && (Double.isNaN(out) || Double.isInfinite(out))) {
-            out = Nd4j.EPS_THRESHOLD;
-        }
-        return out;
-    }
-
-    private static IComplexNumber sigmoidDeriv(IComplexNumber number) {
-        double arg = number.complexArgument().doubleValue();
-        double sigArg = 1 / 1 + (FastMath.exp(-arg)) - 1 + .5f;
-        double ret = Math.exp(sigArg);
-        IComplexDouble sigmoid = Nd4j.createDouble(ret, 0);
-        IComplexNumber oneMinus = Nd4j.createComplexNumber(1, 1).subi(sigmoid);
-        return sigmoid.mul(oneMinus);
+       @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+       throw new UnsupportedOperationException();
     }
 }

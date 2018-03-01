@@ -1,10 +1,13 @@
 package org.nd4j.linalg.api.ops.impl.meta;
 
+import org.nd4j.autodiff.samediff.SDVariable;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.Op;
 import org.nd4j.linalg.api.ops.ScalarOp;
 import org.nd4j.linalg.api.ops.TransformOp;
 import org.nd4j.linalg.api.ops.grid.OpDescriptor;
+
+import java.util.List;
 
 /**
  * This MetaOp covers case, when Op A and Op B are both using linear memory access
@@ -53,7 +56,12 @@ public class InvertedPredicateMetaOp extends BaseMetaOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "meta_predicate_inverted";
+    }
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
 }

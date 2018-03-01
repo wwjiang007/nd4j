@@ -1,6 +1,6 @@
 package org.nd4j.linalg.activations;
 
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.activations.impl.*;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.shade.jackson.annotation.JsonAutoDetect;
@@ -21,6 +21,8 @@ import java.io.Serializable;
                 @JsonSubTypes.Type(value = ActivationLReLU.class, name = "LReLU"),
                 @JsonSubTypes.Type(value = ActivationRationalTanh.class, name = "RationalTanh"),
                 @JsonSubTypes.Type(value = ActivationRectifiedTanh.class, name = "RectifiedTanh"),
+                @JsonSubTypes.Type(value = ActivationSELU.class, name = "SELU"),
+                @JsonSubTypes.Type(value = ActivationSwish.class, name = "SWISH"),
                 @JsonSubTypes.Type(value = ActivationReLU.class, name = "ReLU"),
                 @JsonSubTypes.Type(value = ActivationRReLU.class, name = "RReLU"),
                 @JsonSubTypes.Type(value = ActivationSigmoid.class, name = "Sigmoid"),

@@ -19,12 +19,17 @@
 
 package org.nd4j.linalg.api.ops.impl.accum;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseAccumulation;
-import org.nd4j.linalg.api.ops.Op;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.conditions.Condition;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Absolute sum the components
@@ -33,9 +38,23 @@ import org.nd4j.linalg.indexing.conditions.Condition;
  */
 public class MatchCondition extends BaseAccumulation {
 
-    double compare;
-    double eps;
-    int mode;
+    private double compare;
+    private double eps;
+    private int mode;
+
+    public MatchCondition(SameDiff sameDiff, SDVariable i_v, int[] dimensions, double compare, double eps, int mode) {
+        super(sameDiff, i_v, dimensions);
+        this.compare = compare;
+        this.eps = eps;
+        this.mode = mode;
+    }
+
+    public MatchCondition(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions, double compare, double eps, int mode) {
+        super(sameDiff, i_v, i_v2, dimensions);
+        this.compare = compare;
+        this.eps = eps;
+        this.mode = mode;
+    }
 
     public MatchCondition() {}
 
@@ -54,87 +73,43 @@ public class MatchCondition extends BaseAccumulation {
     }
 
     @Override
+    public Map<String, Object> propertiesForFunction() {
+        Map<String,Object> ret = new LinkedHashMap<>();
+        ret.put("compare",compare);
+        ret.put("eps",eps);
+        ret.put("mode",mode);
+        return ret;
+    }
+
+
+    @Override
     public int opNum() {
         return 12;
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "match_condition";
     }
 
     @Override
-    public Op opForDimension(int index, int dimension) {
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
+    }
+
+    @Override
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
+    }
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
         return null;
     }
 
     @Override
-    public Op opForDimension(int index, int... dimension) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return null;
-    }
-
-    @Override
-    public double update(double accum, double x) {
-        return 0;
-    }
-
-    @Override
-    public double update(double accum, double x, double y) {
-        return 0;
-    }
-
-    @Override
-    public float update(float accum, float x) {
-        return 0;
-    }
-
-    @Override
-    public float update(float accum, float x, float y) {
-        return 0;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x, double y) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, IComplexNumber y) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, double y) {
-        return null;
+    public Type getOpType() {
+        return Type.REDUCE;
     }
 }

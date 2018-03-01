@@ -19,12 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms.comparison;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+
+import java.util.List;
 
 /**
  * Bit mask over the ndarrays as to whether
@@ -33,6 +34,33 @@ import org.nd4j.linalg.factory.Nd4j;
  * @author Adam Gibson
  */
 public class Eps extends BaseTransformOp {
+    public Eps(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2) {
+        super(sameDiff, i_v1, i_v2);
+    }
+
+    public Eps(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, boolean inPlace) {
+        super(sameDiff, i_v1, i_v2, inPlace);
+    }
+
+    public Eps(SameDiff sameDiff) {
+        super(sameDiff);
+    }
+
+    public Eps(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, Object[] extraArgs) {
+        super(sameDiff, i_v1, i_v2, extraArgs);
+    }
+
+    public Eps(SameDiff sameDiff, SDVariable i_v, boolean inPlace) {
+        super(sameDiff, i_v, inPlace);
+    }
+
+    public Eps(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+    }
+
+    public Eps(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs) {
+        super(sameDiff, i_v, extraArgs);
+    }
 
     public Eps() {}
 
@@ -58,80 +86,22 @@ public class Eps extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "eps";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        if (origin.isReal())
-            return FastMath.abs(origin.realComponent().doubleValue() - other) < Nd4j.EPS_THRESHOLD
-                            ? Nd4j.createComplexNumber(1.0, 0.0) : Nd4j.createComplexNumber(0.0, 0.0);
-        return Nd4j.createComplexNumber(0.0, 0.0);
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        if (origin.isReal())
-            return FastMath.abs(origin.realComponent().doubleValue() - other) < Nd4j.EPS_THRESHOLD
-                            ? Nd4j.createComplexNumber(1.0, 0.0) : Nd4j.createComplexNumber(0.0, 0.0);
-        return Nd4j.createComplexNumber(0.0, 0.0);
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return Math.abs(origin.absoluteValue().doubleValue() - other.absoluteValue().doubleValue()) < Nd4j.EPS_THRESHOLD
-                        ? Nd4j.createComplexNumber(1.0, 0.0) : Nd4j.createComplexNumber(0.0, 0.0);
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
-
-    @Override
-    public float op(float origin, float other) {
-        return Math.abs(origin - other) < Nd4j.EPS_THRESHOLD ? 1.0f : 0.0f;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return Math.abs(origin - other) < Nd4j.EPS_THRESHOLD ? 1.0 : 0.0;
-    }
-
-    @Override
-    public double op(double origin) {
-        return 1;
-    }
-
-    @Override
-    public float op(float origin) {
-        return 1;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return Nd4j.createComplexNumber(1.0, 0.0);
-    }
-
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Eps(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Eps(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Eps(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Eps(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
 }

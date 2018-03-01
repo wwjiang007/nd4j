@@ -147,7 +147,7 @@ public interface NDArrayFactory {
     void setOrder(char order);
 
     /**
-     * Sets the data type
+     * Sets the data opType
      *
      * @param dtype
      */
@@ -170,9 +170,9 @@ public interface NDArrayFactory {
     char order();
 
     /**
-     * Returns the data type for this ndarray
+     * Returns the data opType for this ndarray
      *
-     * @return the data type for this ndarray
+     * @return the data opType for this ndarray
      */
     DataBuffer.Type dtype();
 
@@ -185,7 +185,7 @@ public interface NDArrayFactory {
      * @param offset  the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(int rows, int columns, int[] stride, int offset);
+    IComplexNDArray createComplex(int rows, int columns, int[] stride, long offset);
 
     /**
      * Generate a linearly spaced vector
@@ -481,6 +481,16 @@ public interface NDArrayFactory {
      * @return
      */
     INDArray average(Collection<INDArray> arrays);
+
+
+    /**
+     * This method sums given arrays to target
+     *
+     * @param target
+     * @param arrays
+     * @return
+     */
+    INDArray accumulate(INDArray target, INDArray... arrays);
 
 
     /**
@@ -864,7 +874,7 @@ public interface NDArrayFactory {
      * @param offset  the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(float[] data, int rows, int columns, int[] stride, int offset);
+    IComplexNDArray createComplex(float[] data, int rows, int columns, int[] stride, long offset);
 
 
     /**
@@ -877,7 +887,7 @@ public interface NDArrayFactory {
      * @param offset  the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(DataBuffer data, int rows, int columns, int[] stride, int offset);
+    IComplexNDArray createComplex(DataBuffer data, int rows, int columns, int[] stride, long offset);
 
     /**
      * Creates an ndarray with the specified shape
@@ -889,7 +899,7 @@ public interface NDArrayFactory {
      * @param offset  the offset of the ndarray
      * @return the instance
      */
-    INDArray create(DataBuffer data, int rows, int columns, int[] stride, int offset);
+    INDArray create(DataBuffer data, int rows, int columns, int[] stride, long offset);
 
     /**
      * Creates a complex ndarray with the specified shape
@@ -900,7 +910,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(DataBuffer data, int[] shape, int[] stride, int offset);
+    IComplexNDArray createComplex(DataBuffer data, int[] shape, int[] stride, long offset);
 
 
     /**
@@ -911,7 +921,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(float[] data, int rows, int columns, int[] stride, int offset);
+    INDArray create(float[] data, int rows, int columns, int[] stride, long offset);
 
     /**
      * Creates a complex ndarray with the specified shape
@@ -922,7 +932,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(IComplexNumber[] data, int[] shape, int[] stride, int offset);
+    IComplexNDArray createComplex(IComplexNumber[] data, int[] shape, int[] stride, long offset);
 
     /**
      * Creates a complex ndarray with the specified shape
@@ -933,7 +943,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(IComplexNumber[] data, int[] shape, int[] stride, int offset, char ordering);
+    IComplexNDArray createComplex(IComplexNumber[] data, int[] shape, int[] stride, long offset, char ordering);
 
 
     /**
@@ -954,7 +964,7 @@ public interface NDArrayFactory {
      * @param offset the stride for the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(IComplexNumber[] data, int[] shape, int offset, char ordering);
+    IComplexNDArray createComplex(IComplexNumber[] data, int[] shape, long offset, char ordering);
 
 
     /**
@@ -975,7 +985,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    INDArray create(float[] data, int[] shape, int[] stride, int offset);
+    INDArray create(float[] data, int[] shape, int[] stride, long offset);
 
     /**
      * Create an ndrray with the specified shape
@@ -1042,7 +1052,7 @@ public interface NDArrayFactory {
      * @param offset  the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(double[] data, int rows, int columns, int[] stride, int offset);
+    IComplexNDArray createComplex(double[] data, int rows, int columns, int[] stride, long offset);
 
     /**
      * Creates an ndarray with the specified shape
@@ -1054,7 +1064,7 @@ public interface NDArrayFactory {
      * @param offset  the offset of the ndarray
      * @return the instance
      */
-    INDArray create(double[] data, int rows, int columns, int[] stride, int offset);
+    INDArray create(double[] data, int rows, int columns, int[] stride, long offset);
 
     /**
      * Creates a complex ndarray with the specified shape
@@ -1064,7 +1074,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(double[] data, int[] shape, int[] stride, int offset);
+    IComplexNDArray createComplex(double[] data, int[] shape, int[] stride, long offset);
 
 
     /**
@@ -1075,7 +1085,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    INDArray create(double[] data, int[] shape, int[] stride, int offset);
+    INDArray create(double[] data, int[] shape, int[] stride, long offset);
 
 
     /**
@@ -1116,7 +1126,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    INDArray create(DataBuffer data, int[] shape, int[] stride, int offset);
+    INDArray create(DataBuffer data, int[] shape, int[] stride, long offset);
 
 
     /**
@@ -1146,7 +1156,7 @@ public interface NDArrayFactory {
      * @param offset  the offset of the ndarray
      * @return the instance
      */
-    INDArray create(int rows, int columns, int[] stride, int offset);
+    INDArray create(int rows, int columns, int[] stride, long offset);
 
 
     /**
@@ -1157,7 +1167,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    IComplexNDArray createComplex(int[] shape, int[] stride, int offset);
+    IComplexNDArray createComplex(int[] shape, int[] stride, long offset);
 
     /**
      * Creates an ndarray with the specified shape
@@ -1167,7 +1177,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the instance
      */
-    INDArray create(int[] shape, int[] stride, int offset);
+    INDArray create(int[] shape, int[] stride, long offset);
 
 
     /**
@@ -1252,7 +1262,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the created ndarray
      */
-    INDArray scalar(Number value, int offset);
+    INDArray scalar(Number value, long offset);
 
     /**
      * Create a scalar ndarray with the specified offset
@@ -1261,7 +1271,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the created ndarray
      */
-    IComplexNDArray complexScalar(Number value, int offset);
+    IComplexNDArray complexScalar(Number value, long offset);
 
 
     /**
@@ -1280,7 +1290,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the scalar nd array
      */
-    INDArray scalar(float value, int offset);
+    INDArray scalar(float value, long offset);
 
     /**
      * Create a scalar nd array with the specified value and offset
@@ -1289,10 +1299,10 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the scalar nd array
      */
-    INDArray scalar(double value, int offset);
+    INDArray scalar(double value, long offset);
 
 
-    INDArray scalar(int value, int offset);
+    INDArray scalar(int value, long offset);
 
     /**
      * Create a scalar ndarray with the specified offset
@@ -1301,6 +1311,11 @@ public interface NDArrayFactory {
      * @return the created ndarray
      */
     INDArray scalar(Number value);
+
+    INDArray trueScalar(Number value);
+
+    INDArray trueVector(float[] data);
+    INDArray trueVector(double[] data);
 
     /**
      * Create a scalar nd array with the specified value and offset
@@ -1325,7 +1340,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the created ndarray
      */
-    IComplexNDArray scalar(IComplexNumber value, int offset);
+    IComplexNDArray scalar(IComplexNumber value, long offset);
 
     /**
      * Create a scalar nd array with the specified value and offset
@@ -1358,7 +1373,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the scalar nd array
      */
-    IComplexNDArray scalar(IComplexFloat value, int offset);
+    IComplexNDArray scalar(IComplexFloat value, long offset);
 
     /**
      * Create a scalar nd array with the specified value and offset
@@ -1367,7 +1382,7 @@ public interface NDArrayFactory {
      * @param offset the offset of the ndarray
      * @return the scalar nd array
      */
-    IComplexNDArray scalar(IComplexDouble value, int offset);
+    IComplexNDArray scalar(IComplexDouble value, long offset);
 
 
     /**
@@ -1380,7 +1395,7 @@ public interface NDArrayFactory {
      * @param ordering the ordering for the ndarray
      * @return the created complex ndarray
      */
-    IComplexNDArray createComplex(double[] data, int[] shape, int[] stride, int offset, char ordering);
+    IComplexNDArray createComplex(double[] data, int[] shape, int[] stride, long offset, char ordering);
 
 
     /**
@@ -1390,10 +1405,10 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    IComplexNDArray createComplex(double[] data, int[] shape, int offset, char ordering);
+    IComplexNDArray createComplex(double[] data, int[] shape, long offset, char ordering);
 
 
-    IComplexNDArray createComplex(DataBuffer buffer, int[] shape, int offset, char ordering);
+    IComplexNDArray createComplex(DataBuffer buffer, int[] shape, long offset, char ordering);
 
     /**
      * @param data
@@ -1401,7 +1416,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    IComplexNDArray createComplex(double[] data, int[] shape, int offset);
+    IComplexNDArray createComplex(double[] data, int[] shape, long offset);
 
     /**
      * @param buffer
@@ -1409,7 +1424,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    IComplexNDArray createComplex(DataBuffer buffer, int[] shape, int offset);
+    IComplexNDArray createComplex(DataBuffer buffer, int[] shape, long offset);
 
     /**
      *
@@ -1418,7 +1433,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(float[] data, int[] shape, int offset);
+    INDArray create(float[] data, int[] shape, long offset);
 
     /**
      *
@@ -1437,7 +1452,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    IComplexNDArray createComplex(float[] data, int[] shape, int offset, char ordering);
+    IComplexNDArray createComplex(float[] data, int[] shape, long offset, char ordering);
 
     /**
      *
@@ -1446,7 +1461,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    IComplexNDArray createComplex(float[] data, int[] shape, int offset);
+    IComplexNDArray createComplex(float[] data, int[] shape, long offset);
 
     /**
      *
@@ -1457,7 +1472,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    IComplexNDArray createComplex(float[] data, int[] shape, int[] stride, int offset, char ordering);
+    IComplexNDArray createComplex(float[] data, int[] shape, int[] stride, long offset, char ordering);
 
     /**
      *
@@ -1484,7 +1499,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    INDArray create(float[] data, int[] shape, int[] stride, int offset, char ordering);
+    INDArray create(float[] data, int[] shape, int[] stride, long offset, char ordering);
 
     /**
      *
@@ -1507,7 +1522,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(DataBuffer buffer, int[] shape, int offset);
+    INDArray create(DataBuffer buffer, int[] shape, long offset);
 
     /**
      *
@@ -1517,7 +1532,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    IComplexNDArray createComplex(float[] data, int[] shape, int[] stride, int offset);
+    IComplexNDArray createComplex(float[] data, int[] shape, int[] stride, long offset);
 
     /**
      *
@@ -1547,7 +1562,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    INDArray create(DataBuffer data, int[] newShape, int[] newStride, int offset, char ordering);
+    INDArray create(DataBuffer data, int[] newShape, int[] newStride, long offset, char ordering);
 
     /**
      *
@@ -1558,7 +1573,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    IComplexNDArray createComplex(DataBuffer data, int[] newDims, int[] newStrides, int offset, char ordering);
+    IComplexNDArray createComplex(DataBuffer data, int[] newDims, int[] newStrides, long offset, char ordering);
 
     /**
      *
@@ -1587,7 +1602,7 @@ public interface NDArrayFactory {
      * @param order
      * @return
      */
-    INDArray create(float[] data, int[] shape, int offset, Character order);
+    INDArray create(float[] data, int[] shape, long offset, Character order);
 
     /**
      *
@@ -1599,7 +1614,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    INDArray create(float[] data, int rows, int columns, int[] stride, int offset, char ordering);
+    INDArray create(float[] data, int rows, int columns, int[] stride, long offset, char ordering);
 
     /**
      *
@@ -1626,7 +1641,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(double[] data, int[] shape, int offset);
+    INDArray create(double[] data, int[] shape, long offset);
 
     /**
      *
@@ -1637,7 +1652,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    INDArray create(double[] data, int[] shape, int[] stride, int offset, char ordering);
+    INDArray create(double[] data, int[] shape, int[] stride, long offset, char ordering);
 
     /**
      *
@@ -1657,7 +1672,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    IComplexNDArray createComplex(int[] ints, int[] ints1, int[] stride, int offset);
+    IComplexNDArray createComplex(int[] ints, int[] ints1, int[] stride, long offset);
 
     /**
      *
@@ -1667,7 +1682,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(int[] ints, int[] ints1, int[] stride, int offset);
+    INDArray create(int[] ints, int[] ints1, int[] stride, long offset);
 
     /**
      *
@@ -1678,7 +1693,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(int[] shape, int[] ints1, int[] stride, char order, int offset);
+    INDArray create(int[] shape, int[] ints1, int[] stride, char order, long offset);
 
     /**
      *
@@ -1714,7 +1729,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(float[] data, int[] shape, int[] stride, char order, int offset);
+    INDArray create(float[] data, int[] shape, int[] stride, char order, long offset);
 
     /**
      *
@@ -1725,7 +1740,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(DataBuffer buffer, int[] shape, int[] stride, char order, int offset);
+    INDArray create(DataBuffer buffer, int[] shape, int[] stride, char order, long offset);
 
     /**
      *
@@ -1744,7 +1759,7 @@ public interface NDArrayFactory {
      * @param offset
      * @return
      */
-    INDArray create(double[] data, int[] shape, int[] stride, char order, int offset);
+    INDArray create(double[] data, int[] shape, int[] stride, char order, long offset);
 
     /**
      *
@@ -1754,7 +1769,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    INDArray create(int[] shape, int[] stride, int offset, char ordering);
+    INDArray create(int[] shape, int[] stride, long offset, char ordering);
 
     /**
      *
@@ -1764,7 +1779,7 @@ public interface NDArrayFactory {
      * @param ordering
      * @return
      */
-    IComplexNDArray createComplex(int[] shape, int[] complexStrides, int offset, char ordering);
+    IComplexNDArray createComplex(int[] shape, int[] complexStrides, long offset, char ordering);
 
 
     //    DataBuffer restoreFromHalfs(DataBuffer buffer);
@@ -1829,4 +1844,30 @@ public interface NDArrayFactory {
 
 
     INDArray[] tear(INDArray tensor, int... dimensions);
+
+    INDArray sort(INDArray x, boolean descending);
+
+    INDArray sort(INDArray x, boolean descending, int... dimensions);
+
+    INDArray sortCooIndices(INDArray x);
+
+    // =========== Sparse methods ===========
+
+    INDArray createSparseCSR(double[] data, int[] columns, int[] pointerB, int[] pointerE, int[] shape);
+
+    INDArray createSparseCSR(float[] data, int[] columns, int[] pointerB, int[] pointerE, int[] shape);
+
+    INDArray createSparseCSR(DataBuffer data, int[] columns, int[] pointerB, int[] pointerE, int[] shape);
+
+    INDArray createSparseCOO(double[] values, int[][] indices, int[] shape);
+
+    INDArray createSparseCOO(float[] values, int[][] indices, int[] shape);
+
+    INDArray createSparseCOO(DataBuffer values, DataBuffer indices, int[] shape);
+
+    INDArray createSparseCOO(DataBuffer values, DataBuffer indices, DataBuffer sparseInformation, int[] shape);
+
+    INDArray createSparseCOO(DataBuffer values, DataBuffer indices, long[] sparseOffsets, int[] flags,
+                    int[] hiddenDimensions, int underlyingRank, int[] shape);
+
 }

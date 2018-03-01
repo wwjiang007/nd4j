@@ -13,11 +13,25 @@ import org.bytedeco.javacpp.*;
 public class PagedPointer extends Pointer {
 
     // we're storing this pointer as strong reference
-    @Getter private Pointer originalPointer;
-    @Getter @Setter private boolean leaked = false;
+    @Getter
+    private Pointer originalPointer;
+    @Getter
+    @Setter
+    private boolean leaked = false;
 
     private PagedPointer() {
 
+    }
+
+
+    public PagedPointer(long address) {
+        this.originalPointer = null;
+
+        this.address = address;
+
+        this.capacity = 0;
+        this.limit = 0;
+        this.position = 0;
     }
 
     public PagedPointer(Pointer pointer) {
@@ -68,6 +82,10 @@ public class PagedPointer extends Pointer {
 
     public LongPointer asLongPointer() {
         return new LongPointer(this);
+    }
+
+    public BytePointer asBytePointer() {
+        return new BytePointer(this);
     }
 
     @Override

@@ -1,19 +1,14 @@
 package org.nd4j.linalg.learning;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.apache.commons.math3.util.FastMath;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.impl.transforms.comparison.Max;
+import org.nd4j.linalg.api.ops.impl.transforms.comparison.OldMax;
 import org.nd4j.linalg.api.shape.Shape;
 import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.NDArrayIndex;
-import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.nd4j.linalg.learning.config.AdaMax;
 import org.nd4j.linalg.ops.transforms.Transforms;
-
-import java.io.Serializable;
 
 /**
  * The AdaMax updater, a variant of Adam.
@@ -60,21 +55,22 @@ public class AdaMaxUpdater implements GradientUpdater<AdaMax> {
      * @return the gradient
      */
     @Override
-    public void applyUpdater(INDArray gradient, int iteration) {
+    public void applyUpdater(INDArray gradient, int iteration, int epoch) {
         if (m == null || u == null)
             throw new IllegalStateException("Updater has not been initialized with view state");
 
         //m = B_1 * m + (1-B_1)*grad
-        m.muli(config.getBeta1()).addi(gradient.mul(1-config.getBeta1()));
+        m.muli(config.getBeta1()).addi(gradient.mul(1 - config.getBeta1()));
 
         //u = max(B_2 * u, |grad|)
         u.muli(config.getBeta2());
-        Transforms.abs(gradient,false);   //In-place should be OK here, original gradient values aren't used again later
-        Nd4j.getExecutioner().exec(new Max(u,gradient,u,u.length()));
+        Transforms.abs(gradient, false); //In-place should be OK here, original gradient values aren't used again later
+        Nd4j.getExecutioner().exec(new OldMax(u, gradient, u, u.length()));
 
         double beta1t = FastMath.pow(config.getBeta1(), iteration + 1);
 
-        double alphat = config.getLearningRate() / (1.0 - beta1t);
+        double learningRate = config.getLearningRate(iteration, epoch);
+        double alphat = learningRate / (1.0 - beta1t);
         if (Double.isNaN(alphat) || Double.isInfinite(alphat) || alphat == 0.0) {
             alphat = config.getEpsilon();
         }

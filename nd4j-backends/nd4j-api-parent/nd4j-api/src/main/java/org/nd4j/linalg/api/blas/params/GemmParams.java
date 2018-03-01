@@ -127,57 +127,16 @@ public @Data class GemmParams {
 
     private INDArray copyIfNeccessary(INDArray arr) {
         //See also: Shape.toMmulCompatible - want same conditions here and there
-        if (arr.isMatrix()) {
-            //Check if matrix values are contiguous in memory. If not: dup
-            //Contiguous for c if: stride[0] == shape[1] and stride[1] = 1
-            //Contiguous for f if: stride[0] == 1 and stride[1] == shape[0]
-            if (!Nd4j.allowsSpecifyOrdering() && arr.ordering() == 'c'
-                            && (arr.stride(0) != arr.size(1) || arr.stride(1) != 1))
-                return arr.dup();
-            else if (arr.ordering() == 'f' && (arr.stride(0) != 1 || arr.stride(1) != arr.size(0)))
-                return arr.dup();
-            else if (arr.elementWiseStride() < 0)
-                return arr.dup();
-        }
+        //Check if matrix values are contiguous in memory. If not: dup
+        //Contiguous for c if: stride[0] == shape[1] and stride[1] = 1
+        //Contiguous for f if: stride[0] == 1 and stride[1] == shape[0]
+        if (!Nd4j.allowsSpecifyOrdering() && arr.ordering() == 'c'
+                && (arr.stride(0) != arr.size(1) || arr.stride(1) != 1))
+            return arr.dup();
+        else if (arr.ordering() == 'f' && (arr.stride(0) != 1 || arr.stride(1) != arr.size(0)))
+            return arr.dup();
+        else if (arr.elementWiseStride() < 0)
+            return arr.dup();
         return arr;
     }
-
-
-
-    private void validate() {
-        if (ordering == 'c') {
-            if (transA == 'T' || transA == 't') {
-                if (m != a.rows())
-                    throw new IllegalArgumentException("M under transpose and c ordering must be A.columns()");
-                if (k != a.columns())
-                    throw new IllegalArgumentException("K under transpose and c ordering must be A.rows()");
-            }
-            //N
-            else {
-                if (m != a.columns())
-                    throw new IllegalArgumentException("M under no transpose and c ordering must be A.rows()");
-                if (k != a.rows())
-                    throw new IllegalArgumentException("K under no transpose and c ordering must be A.columns()");
-            }
-        } else {
-            if (transB == 't' || transB == 'T') {
-                if (n != b.columns())
-                    throw new IllegalArgumentException("N under transpose and c ordering ust be B.rows()");
-                if (k != b.rows())
-                    throw new IllegalArgumentException("K under tranpose and c ordering must be B.columns()");
-            }
-            //N
-            else {
-                if (n != b.rows())
-                    throw new IllegalArgumentException("N under no transpose and c ordering must be B.columns()");
-                if (k != b.columns())
-                    throw new IllegalArgumentException("K under no transpose and c ordering must be B.rows()");
-            }
-        }
-
-
-    }
-
-
-
 }

@@ -1,15 +1,12 @@
 package org.nd4j.linalg.checkutil;
 
-import org.apache.commons.math3.util.Pair;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.NDArrayIndex;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.util.ArrayUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -725,4 +722,56 @@ public class NDArrayCreationUtil {
         return Collections.singletonList(new Pair<>(array6d,
                         "get6dReshapedWithShape(" + seed + "," + Arrays.toString(shape) + ").get(0)"));
     }
+
+
+    /**
+     * Create an ndarray
+     * of
+     * @param seed
+     * @param rank
+     * @param numShapes
+     * @return
+     */
+    public static int[][] getRandomBroadCastShape(long seed, int rank, int numShapes) {
+        Nd4j.getRandom().setSeed(seed);
+        INDArray coinFlip = Nd4j.getDistributions().createBinomial(1, 0.5).sample(new int[] {numShapes, rank});
+        int[][] ret = new int[coinFlip.rows()][coinFlip.columns()];
+        for (int i = 0; i < coinFlip.rows(); i++) {
+            for (int j = 0; j < coinFlip.columns(); j++) {
+                int set = coinFlip.getInt(i, j);
+                if (set > 0)
+                    ret[i][j] = set;
+                else {
+                    //anything from 0 to 9
+                    ret[i][j] = Nd4j.getRandom().nextInt(9) + 1;
+                }
+            }
+        }
+
+        return ret;
+    }
+
+
+    /**
+     * Generate a random shape to
+     * broadcast to
+     * given a randomly generated
+     * shape with 1s in it as inputs
+     * @param inputShapeWithOnes
+     * @param seed
+     * @return
+     */
+    public static int[] broadcastToShape(int[] inputShapeWithOnes, long seed) {
+        Nd4j.getRandom().setSeed(seed);
+        int[] shape = new int[inputShapeWithOnes.length];
+        for (int i = 0; i < shape.length; i++) {
+            if (inputShapeWithOnes[i] == 1) {
+                shape[i] = Nd4j.getRandom().nextInt(9) + 1;
+            } else
+                shape[i] = inputShapeWithOnes[i];
+        }
+
+        return shape;
+    }
+
 }

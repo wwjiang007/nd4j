@@ -27,6 +27,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.nd4j.linalg.BaseNd4jTest;
 import org.nd4j.linalg.api.buffer.util.DataTypeUtil;
+import org.nd4j.linalg.api.memory.MemoryWorkspace;
+import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
+import org.nd4j.linalg.api.memory.enums.AllocationPolicy;
+import org.nd4j.linalg.api.memory.enums.LearningPolicy;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.factory.Nd4jBackend;
@@ -37,11 +41,12 @@ import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Float data buffer tests
  *
- * This tests the float buffer data type
+ * This tests the float buffer data opType
  * Put all buffer related tests here
  *
  * @author Adam Gibson
@@ -211,6 +216,34 @@ public class FloatDataBufferTest extends BaseNd4jTest {
         assertEquals(3, create.getDouble(0), 1e-1);
         assertEquals(4, create.getDouble(1), 1e-1);
 
+    }
+
+    @Test
+    public void testReallocation() {
+        DataBuffer buffer = Nd4j.createBuffer(new float[] {1, 2, 3, 4});
+        assertEquals(4, buffer.capacity());
+        float[] old = buffer.asFloat();
+        buffer.reallocate(6);
+        float[] newBuf = buffer.asFloat();
+        assertEquals(6, buffer.capacity());
+        assertArrayEquals(old, newBuf, 1e-4F);
+    }
+
+    @Test
+    public void testReallocationWorkspace() {
+        WorkspaceConfiguration initialConfig = WorkspaceConfiguration.builder().initialSize(10 * 1024L * 1024L)
+                        .policyAllocation(AllocationPolicy.STRICT).policyLearning(LearningPolicy.NONE).build();
+        MemoryWorkspace workspace = Nd4j.getWorkspaceManager().getAndActivateWorkspace(initialConfig, "SOME_ID");
+
+        DataBuffer buffer = Nd4j.createBuffer(new float[] {1, 2, 3, 4});
+        assertTrue(buffer.isAttached());
+        float[] old = buffer.asFloat();
+        assertEquals(4, buffer.capacity());
+        buffer.reallocate(6);
+        assertEquals(6, buffer.capacity());
+        float[] newBuf = buffer.asFloat();
+        assertArrayEquals(old, newBuf, 1e-4F);
+        workspace.close();
     }
 
     @Override

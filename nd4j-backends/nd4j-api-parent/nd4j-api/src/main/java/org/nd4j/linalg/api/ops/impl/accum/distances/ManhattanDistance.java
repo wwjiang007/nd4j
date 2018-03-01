@@ -19,12 +19,16 @@
 
 package org.nd4j.linalg.api.ops.impl.accum.distances;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseAccumulation;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.util.ComplexUtil;
+import org.nd4j.linalg.api.shape.Shape;
+import org.nd4j.linalg.indexing.SpecifiedIndex;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Manhattan distance
@@ -32,6 +36,15 @@ import org.nd4j.linalg.util.ComplexUtil;
  * @author Adam Gibson
  */
 public class ManhattanDistance extends BaseAccumulation {
+    public static final String OP_NAME = "manhattan";
+
+    public ManhattanDistance(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public ManhattanDistance(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
 
     public ManhattanDistance() {}
 
@@ -63,66 +76,25 @@ public class ManhattanDistance extends BaseAccumulation {
         extraArgs[1] = 0.0f;
     }
 
-    @Override
-    public double update(double accum, double x) {
-        return accum;
+    public ManhattanDistance(INDArray x, INDArray y, boolean allDistances) {
+        this(x, y);
+        this.isComplex = allDistances;
+    }
+
+    public ManhattanDistance(INDArray x, INDArray y, INDArray z, boolean allDistances) {
+        this(x, y, z, x.lengthLong());
+        this.isComplex = allDistances;
     }
 
     @Override
-    public double update(double accum, double x, double y) {
-        return accum + FastMath.abs(x - y);
+    public Type opType() {
+        return Type.REDUCE3;
     }
 
     @Override
-    public float update(float accum, float x) {
-        return accum + x;
+    public Type getOpType() {
+        return opType();
     }
-
-    @Override
-    public float update(float accum, float x, float y) {
-        return accum + FastMath.abs(x - y);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x) {
-        return accum.add(x);
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, double x, double y) {
-        return accum.add(FastMath.abs(x - y));
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x) {
-        return accum;
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, IComplexNumber y) {
-        return accum.add(x.sub(y).absoluteValue());
-    }
-
-    @Override
-    public IComplexNumber update(IComplexNumber accum, IComplexNumber x, double y) {
-        return accum.add(x.sub(y).absoluteValue());
-    }
-
-    @Override
-    public double combineSubResults(double first, double second) {
-        return first + second;
-    }
-
-    @Override
-    public float combineSubResults(float first, float second) {
-        return first + second;
-    }
-
-    @Override
-    public IComplexNumber combineSubResults(IComplexNumber first, IComplexNumber second) {
-        return first.add(second);
-    }
-
 
     @Override
     public int opNum() {
@@ -130,79 +102,40 @@ public class ManhattanDistance extends BaseAccumulation {
     }
 
     @Override
-    public String name() {
-        return "manhattan";
+    public String opName() {
+        return OP_NAME;
     }
 
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        numProcessed++;
-        return origin.sub(other);
-    }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        numProcessed++;
-        return ComplexUtil.abs(origin.sub(other));
-    }
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        //ddist(x,y)/dxi = sign(xi-yi)
+        SDVariable difference = larg().sub(rarg());
+        SDVariable gradBroadcastable;
+        int origRank = Shape.rankFromShape(arg().getShape());   //TODO shape may not always be defined?
+        if(!(dimensions.length == 1 && dimensions[0] == Integer.MAX_VALUE) ){
+            //1x1 output case
+            gradBroadcastable = i_v1.get(0);
+        } else {
+            gradBroadcastable = f().reductionBroadcastableWithOrigShape(origRank, dimensions, i_v1.get(0));
+        }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        numProcessed++;
-        return ComplexUtil.abs(origin.sub(other));
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return FastMath.abs(origin - other);
+        SDVariable gradX = sameDiff.sign(difference).mul(gradBroadcastable);
+        SDVariable gradY = f().neg(gradX);
+        return Arrays.asList(gradX, gradY);
     }
 
     @Override
-    public double op(double origin, double other) {
-        numProcessed++;
-        return FastMath.abs(origin - other);
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
+
     }
 
     @Override
-    public double op(double origin) {
-        numProcessed++;
-        return origin;
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
     }
 
-    @Override
-    public float op(float origin) {
-        numProcessed++;
-        return origin;
-    }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        numProcessed++;
-        return origin;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        ManhattanDistance ret;
-        if (y() != null)
-            ret = new ManhattanDistance(x.vectorAlongDimension(index, dimension),
-                            y.vectorAlongDimension(index, dimension), x.lengthLong());
-        else
-            ret = new ManhattanDistance(x.vectorAlongDimension(index, dimension));
-        ret.setApplyFinalTransform(applyFinalTransform());
-        return ret;
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        ManhattanDistance ret;
-        if (y() != null)
-            ret = new ManhattanDistance(x.tensorAlongDimension(index, dimension),
-                            y.tensorAlongDimension(index, dimension), x.lengthLong());
-        else
-            ret = new ManhattanDistance(x.tensorAlongDimension(index, dimension));
-        ret.setApplyFinalTransform(applyFinalTransform());
-        return ret;
-    }
 }

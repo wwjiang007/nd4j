@@ -1,7 +1,7 @@
 package org.nd4j.linalg.lossfunctions;
 
 
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.lossfunctions.impl.*;
@@ -27,7 +27,8 @@ import java.io.Serializable;
                 @JsonSubTypes.Type(value = LossMSLE.class, name = "MSLE"),
                 @JsonSubTypes.Type(value = LossNegativeLogLikelihood.class, name = "NegativeLogLikelihood"),
                 @JsonSubTypes.Type(value = LossPoisson.class, name = "Poisson"),
-                @JsonSubTypes.Type(value = LossSquaredHinge.class, name = "SquaredHinge")})
+                @JsonSubTypes.Type(value = LossSquaredHinge.class, name = "SquaredHinge"),
+                @JsonSubTypes.Type(value = LossFMeasure.class, name = "FMeasure")})
 public interface ILossFunction extends Serializable {
 
     /**
@@ -75,5 +76,11 @@ public interface ILossFunction extends Serializable {
     //TODO: do we want to use the apache commons pair here?
     Pair<Double, INDArray> computeGradientAndScore(INDArray labels, INDArray preOutput, IActivation activationFn,
                     INDArray mask, boolean average);
+
+    /**
+     * The opName of this function
+     * @return
+     */
+    String name();
 
 }

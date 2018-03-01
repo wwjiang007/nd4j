@@ -2,7 +2,7 @@
     <parent>
         <artifactId>nd4j-backends</artifactId>
         <groupId>org.nd4j</groupId>
-        <version>0.8.1-SNAPSHOT</version>
+        <version>0.9.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -18,11 +18,6 @@
         <module>nd4j-cuda-platform</module>
     </modules>
     <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <properties>
@@ -33,7 +28,11 @@
         <dependency.classifier>${javacpp.platform}</dependency.classifier>
         <dependency.platform></dependency.platform>
         <javacpp.platform.android-arm>android-arm</javacpp.platform.android-arm>
+        <javacpp.platform.android-arm64>android-arm64</javacpp.platform.android-arm64>
         <javacpp.platform.android-x86>android-x86</javacpp.platform.android-x86>
+        <javacpp.platform.android-x86_64>android-x86_64</javacpp.platform.android-x86_64>
+        <javacpp.platform.ios-arm64>ios-arm64</javacpp.platform.ios-arm64>
+        <javacpp.platform.ios-x86_64>ios-x86_64</javacpp.platform.ios-x86_64>
         <javacpp.platform.linux-x86_64>linux-x86_64</javacpp.platform.linux-x86_64>
         <javacpp.platform.macosx-x86_64>macosx-x86_64</javacpp.platform.macosx-x86_64>
         <javacpp.platform.windows-x86_64>windows-x86_64</javacpp.platform.windows-x86_64>
@@ -44,6 +43,42 @@
 
     <build>
         <testSourceDirectory>../nd4j-tests/src/test/java</testSourceDirectory>
+        <plugins>
+            <!-- Skip execution of Javadoc since some versions run out of memory -->
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>empty-javadoc-jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <classifier>javadoc</classifier>
+                            <classesDirectory>${basedir}/javadoc</classesDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -82,22 +117,22 @@
                             </goals>
                             <configuration>
                                 <excludes>
-                                    <exclude>org/nd4j/nativeblas/${javacpp.platform}/*</exclude>
+                                    <exclude>org/nd4j/nativeblas/${javacpp.platform}${javacpp.platform.extension}/*</exclude>
                                     <exclude>lib/**</exclude>
                                 </excludes>
                             </configuration>
                         </execution>
                         <execution>
-                            <id>${javacpp.platform}</id>
+                            <id>${javacpp.platform}${javacpp.platform.extension}</id>
                             <phase>package</phase>
                             <goals>
                                 <goal>jar</goal>
                             </goals>
                             <configuration>
-                                <classifier>${javacpp.platform}</classifier>
+                                <classifier>${javacpp.platform}${javacpp.platform.extension}</classifier>
                                 <skipIfEmpty>true</skipIfEmpty>
                                 <includes>
-                                    <include>org/nd4j/nativeblas/${javacpp.platform}/*</include>
+                                    <include>org/nd4j/nativeblas/${javacpp.platform}${javacpp.platform.extension}/*</include>
                                     <include>lib/**</include>
                                 </includes>
                             </configuration>
@@ -128,7 +163,7 @@
             </activation>
             <properties>
                 <dependency.groupId>${project.parent.groupId}</dependency.groupId>
-                <dependency.artifactId>${project.artifactId}</dependency.artifactId>
+                <dependency.artifactId>${project.parent.artifactId}</dependency.artifactId>
                 <dependency.version>${project.parent.version}</dependency.version>
                 <dependency.packaging>pom</dependency.packaging>
                 <dependency.classifier></dependency.classifier>
@@ -157,7 +192,11 @@
             </activation>
             <properties>
                 <javacpp.platform.android-arm>${javacpp.platform}</javacpp.platform.android-arm>
+                <javacpp.platform.android-arm64>${javacpp.platform}</javacpp.platform.android-arm64>
                 <javacpp.platform.android-x86>${javacpp.platform}</javacpp.platform.android-x86>
+                <javacpp.platform.android-x86_64>${javacpp.platform}</javacpp.platform.android-x86_64>
+                <javacpp.platform.ios-arm64>${javacpp.platform}</javacpp.platform.ios-arm64>
+                <javacpp.platform.ios-x86_64>${javacpp.platform}</javacpp.platform.ios-x86_64>
                 <javacpp.platform.linux-x86_64>${javacpp.platform}</javacpp.platform.linux-x86_64>
                 <javacpp.platform.macosx-x86_64>${javacpp.platform}</javacpp.platform.macosx-x86_64>
                 <javacpp.platform.windows-x86_64>${javacpp.platform}</javacpp.platform.windows-x86_64>
@@ -174,7 +213,11 @@
             </activation>
             <properties>
                 <javacpp.platform.android-arm></javacpp.platform.android-arm>
+                <javacpp.platform.android-arm64></javacpp.platform.android-arm64>
                 <javacpp.platform.android-x86></javacpp.platform.android-x86>
+                <javacpp.platform.android-x86_64></javacpp.platform.android-x86_64>
+                <javacpp.platform.ios-arm64></javacpp.platform.ios-arm64>
+                <javacpp.platform.ios-x86_64></javacpp.platform.ios-x86_64>
                 <javacpp.platform.linux-x86_64></javacpp.platform.linux-x86_64>
                 <javacpp.platform.macosx-x86_64></javacpp.platform.macosx-x86_64>
                 <javacpp.platform.windows-x86_64></javacpp.platform.windows-x86_64>
@@ -191,7 +234,11 @@
             </activation>
             <properties>
                 <javacpp.platform.android-arm></javacpp.platform.android-arm>
+                <javacpp.platform.android-arm64></javacpp.platform.android-arm64>
                 <javacpp.platform.android-x86></javacpp.platform.android-x86>
+                <javacpp.platform.android-x86_64></javacpp.platform.android-x86_64>
+                <javacpp.platform.ios-arm64></javacpp.platform.ios-arm64>
+                <javacpp.platform.ios-x86_64></javacpp.platform.ios-x86_64>
                 <javacpp.platform.linux-x86_64></javacpp.platform.linux-x86_64>
                 <javacpp.platform.macosx-x86_64></javacpp.platform.macosx-x86_64>
                 <javacpp.platform.windows-x86_64></javacpp.platform.windows-x86_64>
@@ -215,6 +262,20 @@
           </properties>
         </profile>
         <profile>
+          <id>android-arm64-default</id>
+          <activation>
+            <property>
+              <name>javacpp.platform</name>
+              <value>android-arm64</value>
+            </property>
+          </activation>
+          <properties>
+            <javacpp.platform>android-arm64</javacpp.platform>
+            <javacpp.platform.root>${env.ANDROID_NDK}</javacpp.platform.root>
+            <javacpp.platform.compiler>toolchains/aarch64-linux-android-4.9/prebuilt/${os.name}-${os.arch}/bin/aarch64-linux-android-g++</javacpp.platform.compiler>
+          </properties>
+        </profile>
+        <profile>
           <id>android-x86-default</id>
           <activation>
             <property>
@@ -226,6 +287,20 @@
             <javacpp.platform>android-x86</javacpp.platform>
             <javacpp.platform.root>${env.ANDROID_NDK}</javacpp.platform.root>
             <javacpp.platform.compiler>toolchains/x86-4.9/prebuilt/${os.name}-${os.arch}/bin/i686-linux-android-g++</javacpp.platform.compiler>
+          </properties>
+        </profile>
+        <profile>
+          <id>android-x86_64-default</id>
+          <activation>
+            <property>
+              <name>javacpp.platform</name>
+              <value>android-x86_64</value>
+            </property>
+          </activation>
+          <properties>
+            <javacpp.platform>android-x86_64</javacpp.platform>
+            <javacpp.platform.root>${env.ANDROID_NDK}</javacpp.platform.root>
+            <javacpp.platform.compiler>toolchains/x86_64-4.9/prebuilt/${os.name}-${os.arch}/bin/x86_64-linux-android-g++</javacpp.platform.compiler>
           </properties>
         </profile>
         <profile>

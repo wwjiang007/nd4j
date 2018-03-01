@@ -19,121 +19,59 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms.arithmetic;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
+import org.nd4j.linalg.api.ops.impl.transforms.BaseDynamicTransformOp;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Subtraction operation
+ * OldReverse 'Subtraction operation
  *
  * @author Adam Gibson
  */
-public class RSubOp extends BaseTransformOp {
+public class RSubOp extends BaseDynamicTransformOp {
+
+    public RSubOp(SameDiff sameDiff, SDVariable[] args, boolean inPlace){
+        super(sameDiff, args, inPlace);
+    }
+
+    public RSubOp(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2) {
+        this(sameDiff, new SDVariable[]{i_v1, i_v2}, false);
+    }
+
+    public RSubOp(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, boolean inPlace) {
+        this(sameDiff, new SDVariable[]{i_v1, i_v2}, inPlace);
+    }
+
     public RSubOp() {}
 
-    public RSubOp(INDArray x, INDArray y, INDArray z, long n) {
-        super(x, y, z, n);
-    }
-
-    public RSubOp(INDArray x) {
-        super(x);
-    }
-
-    public RSubOp(INDArray x, INDArray z) {
-        super(x, z);
-    }
-
-    public RSubOp(INDArray x, INDArray z, long n) {
-        super(x, z, n);
-    }
-
-    public RSubOp(INDArray x, INDArray y, INDArray z) {
-        super(x, y, z, x.lengthLong());
+    @Override
+    public String opName() {
+        return "reversesubtract";
     }
 
     @Override
-    public int opNum() {
-        return 8;
+    public String onnxName() {
+        return "Sub";
     }
 
     @Override
-    public String name() {
-        return "rsub";
+    public String tensorflowName() {
+        return "sub";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin.rsub(other);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin.rsub(other);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin.rsub(other);
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return other - origin;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return other - origin;
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin;
+    public RSubOp( INDArray[] inputs, INDArray[] outputs) {
+        super(inputs, outputs);
     }
 
 
     @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-
-        if (y() != null)
-            return new RSubOp(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new RSubOp(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        return f().rsubBp(larg(), rarg(), i_v.get(0));
     }
 
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-
-        if (y() != null)
-            return new RSubOp(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new RSubOp(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-
-    @Override
-    public void init(INDArray x, INDArray y, INDArray z, long n) {
-        super.init(x, y, z, n);
-        if (y == null)
-            throw new IllegalArgumentException("No components to subtract");
-    }
 }

@@ -20,8 +20,18 @@
 package org.nd4j.linalg.api.ops.random.impl;
 
 import lombok.NonNull;
+import onnx.OnnxProto3;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.random.BaseRandomOp;
+import org.tensorflow.framework.AttrValue;
+import org.tensorflow.framework.GraphDef;
+import org.tensorflow.framework.NodeDef;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Inverted DropOut implementation as Op
@@ -55,13 +65,47 @@ public class DropOutInverted extends BaseRandomOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "dropout_inverted";
+    }
+
+    @Override
+    public Map<String, Object> propertiesForFunction() {
+        Map<String,Object> ret = new LinkedHashMap<>();
+        ret.put("p",p);
+        return ret;
+    }
+
+
+    @Override
+    public void initFromTensorFlow(NodeDef nodeDef, SameDiff initWith, Map<String, AttrValue> attributesForNode, GraphDef graph) {
+        super.initFromTensorFlow(nodeDef, initWith, attributesForNode, graph);
+    }
+
+    @Override
+    public void initFromOnnx(OnnxProto3.NodeProto node, SameDiff initWith, Map<String, OnnxProto3.AttributeProto> attributesForNode, OnnxProto3.GraphProto graph) {
+        super.initFromOnnx(node, initWith, attributesForNode, graph);
     }
 
     @Override
     public void init(INDArray x, INDArray y, INDArray z, long n) {
         super.init(x, y, z, n);
         this.extraArgs = new Object[] {p};
+    }
+
+    @Override
+    public String onnxName() {
+        return "Dropout";
+    }
+
+    @Override
+    public String tensorflowName() {
+        return "Dropout";
+    }
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
 }

@@ -5,6 +5,8 @@ import org.nd4j.linalg.api.memory.conf.WorkspaceConfiguration;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.util.List;
+
 
 /**
  * This interface describes backend-specific implementations of MemoryWorkspaceManager, basically Factory + Thread-based provider
@@ -12,6 +14,14 @@ import edu.umd.cs.findbugs.annotations.NonNull;
  * @author raver119@gmail.com
  */
 public interface MemoryWorkspaceManager {
+
+    /**
+     * Returns globally unique ID
+     *
+     * @return
+     */
+    String getUUID();
+
     /**
      * This method sets default workspace configuration for this provider instance
      *
@@ -141,6 +151,14 @@ public interface MemoryWorkspaceManager {
     boolean checkIfWorkspaceExists(String id);
 
     /**
+     * This method checks, if Workspace with a given Id was created before this call, AND is active at the moment of call
+     *
+     * @param id
+     * @return
+     */
+    boolean checkIfWorkspaceExistsAndActive(String id);
+
+    /**
      * This method temporary opens block out of any workspace scope.
      *
      * PLEASE NOTE: Do not forget to close this block.
@@ -149,6 +167,20 @@ public interface MemoryWorkspaceManager {
      */
     MemoryWorkspace scopeOutOfWorkspaces();
 
-
+    /**
+     * This method prints out allocation statistics for current thread
+     */
     void printAllocationStatisticsForCurrentThread();
+
+    /**
+     * This method returns list of workspace IDs for current thread
+     *
+     * @return
+     */
+    List<String> getAllWorkspacesIdsForCurrentThread();
+
+    /**
+     * This method returns all workspaces for current thread
+     */
+    List<MemoryWorkspace> getAllWorkspacesForCurrentThread();
 }

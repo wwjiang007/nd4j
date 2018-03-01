@@ -19,9 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.accum;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.Op;
+import org.nd4j.linalg.api.shape.Shape;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Calculate the mean of the vector
@@ -29,6 +33,13 @@ import org.nd4j.linalg.api.ops.Op;
  * @author Adam Gibson
  */
 public class Mean extends Sum {
+    public Mean(SameDiff sameDiff, SDVariable i_v, int[] dimensions) {
+        super(sameDiff, i_v, dimensions);
+    }
+
+    public Mean(SameDiff sameDiff, SDVariable i_v, SDVariable i_v2, int[] dimensions) {
+        super(sameDiff, i_v, i_v2, dimensions);
+    }
 
     public Mean() {}
 
@@ -58,81 +69,32 @@ public class Mean extends Sum {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "mean";
     }
 
+
     @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-        Mean ret;
-        if (y() != null)
-            ret = new Mean(xAlongDimension, y.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            ret = new Mean(x.vectorAlongDimension(index, dimension));
-        ret.setApplyFinalTransform(applyFinalTransform());
-        return ret;
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        //If out = mean(in), then dL/dIn = 1/N * dL/dOut  (broadcast to appropriate shape)
+        //Note that N differs for "along dimension" vs. "whole array" reduce cases
+        int n = f().getReductionLength(this);
+
+        int rank = Shape.rankFromShape(arg().getShape());
+        SDVariable broadcastableGrad = f().reductionBroadcastableWithOrigShape(rank, dimensions, i_v1.get(0));
+        SDVariable ret = sameDiff.onesLike(arg()).div(n);      //1/N with shape equal to input
+
+        ret = ret.mul(broadcastableGrad);
+        return Collections.singletonList(ret);
     }
 
     @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-        Mean ret;
-
-        if (y() != null)
-            ret = new Mean(xAlongDimension, y.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            ret = new Mean(x.tensorAlongDimension(index, dimension));
-        ret.setApplyFinalTransform(applyFinalTransform());
-        return ret;
-    }
-
-
-
-    @Override
-    public double getAndSetFinalResult(double accum) {
-        double result;
-        if (applyFinalTransform()) {
-            result = accum / n();
-            this.finalResult = result;
-        } else {
-            result = accum;
-            this.finalResult = result;
-        }
-        return result;
-
+    public String onnxName() {
+        return "ReduceMean";
     }
 
     @Override
-    public float getAndSetFinalResult(float accum) {
-        if (applyFinalTransform()) {
-            float f = accum / n();
-            this.finalResult = f;
-            return f;
-        } else {
-            this.finalResult = accum;
-            return accum;
-        }
-
-    }
-
-    @Override
-    public double calculateFinalResult(double accum, long n) {
-        if (applyFinalTransform())
-            return accum / n;
-        return accum;
-    }
-
-    @Override
-    public float calculateFinalResult(float accum, long n) {
-        if (applyFinalTransform())
-            return accum / n;
-        return accum;
-    }
-
-    @Override
-    public IComplexNumber getAndSetFinalResult(IComplexNumber accum) {
-        finalResultComplex = accum.div(n());
-        return finalResultComplex;
+    public String tensorflowName() {
+        return "Mean";
     }
 }

@@ -3,20 +3,33 @@ package org.nd4j.linalg.lossfunctions.impl;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.math3.util.Pair;
+import lombok.Setter;
+import onnx.OnnxProto3;
+import org.nd4j.autodiff.functions.DifferentialFunction;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.activations.impl.ActivationSoftmax;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.impl.transforms.LogSoftMax;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.api.ops.Op;
+import org.nd4j.linalg.indexing.BooleanIndexing;
+import org.nd4j.linalg.indexing.conditions.Conditions;
 import org.nd4j.linalg.lossfunctions.ILossFunction;
 import org.nd4j.linalg.lossfunctions.LossUtil;
 import org.nd4j.linalg.lossfunctions.serde.RowVectorDeserializer;
 import org.nd4j.linalg.lossfunctions.serde.RowVectorSerializer;
 import org.nd4j.linalg.ops.transforms.Transforms;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.shade.jackson.annotation.JsonInclude;
+import org.nd4j.shade.jackson.annotation.JsonProperty;
 import org.nd4j.shade.jackson.databind.annotation.JsonDeserialize;
 import org.nd4j.shade.jackson.databind.annotation.JsonSerialize;
+import org.tensorflow.framework.AttrValue;
+import org.tensorflow.framework.GraphDef;
+import org.tensorflow.framework.NodeDef;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -28,15 +41,29 @@ import org.nd4j.shade.jackson.databind.annotation.JsonSerialize;
  */
 @EqualsAndHashCode
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Getter
-public class LossMCXENT implements ILossFunction {
+@Getter @Setter
+public class LossMCXENT extends DifferentialFunction implements ILossFunction {
+    private static final double DEFAULT_SOFTMAX_CLIPPING_EPSILON = 1e-10;
 
     @JsonSerialize(using = RowVectorSerializer.class)
     @JsonDeserialize(using = RowVectorDeserializer.class)
-    private final INDArray weights;
+    private INDArray weights;
+
+    private double softmaxClipEps;
 
     public LossMCXENT() {
         this(null);
+    }
+
+    /**
+     * Multi-Class Cross Entropy loss function where each the output is (optionally) weighted/scaled by a flags scalar value.
+     * Note that the weights array must be a row vector, of length equal to the labels/output dimension 1 size.
+     * A weight vector of 1s should give identical results to no weight vector.
+     *
+     * @param weights Weights array (row vector). May be null.
+     */
+    public LossMCXENT(INDArray weights) {
+        this(DEFAULT_SOFTMAX_CLIPPING_EPSILON, weights);
     }
 
     /**
@@ -46,32 +73,32 @@ public class LossMCXENT implements ILossFunction {
      *
      * @param weights Weights array (row vector). May be null.
      */
-    public LossMCXENT(INDArray weights) {
+    public LossMCXENT(@JsonProperty("softmaxClipEps") double softmaxClipEps, @JsonProperty("weights") INDArray weights) {
         if (weights != null && !weights.isRowVector()) {
             throw new IllegalArgumentException("Weights array must be a row vector");
         }
+        if(softmaxClipEps < 0 || softmaxClipEps > 0.5){
+            throw new IllegalArgumentException("Invalid clipping epsilon: epsilon should be >= 0 (but near zero). Got: "
+                    + softmaxClipEps);
+        }
         this.weights = weights;
+        this.softmaxClipEps = softmaxClipEps;
     }
 
     private INDArray scoreArray(INDArray labels, INDArray preOutput, IActivation activationFn, INDArray mask) {
         if (labels.size(1) != preOutput.size(1)) {
-            throw new IllegalArgumentException("Labels array numColumns (size(1) = " + labels.size(1)
-                            + ") does not match output layer" + " number of outputs (nOut = " + preOutput.size(1)
-                            + ") ");
-            
-        }
-        INDArray scoreArr;
-        //if ("softmax".equals(activationFn)) {
-        if (activationFn instanceof ActivationSoftmax) {
-            //Use LogSoftMax op to avoid numerical issues when calculating score
-            INDArray logsoftmax = Nd4j.getExecutioner().execAndReturn(new LogSoftMax(preOutput.dup()));
-            scoreArr = logsoftmax.muli(labels);
+            throw new IllegalArgumentException(
+                            "Labels array numColumns (size(1) = " + labels.size(1) + ") does not match output layer"
+                                            + " number of outputs (nOut = " + preOutput.size(1) + ") ");
 
-        } else {
-            //INDArray output = Nd4j.getExecutioner().execAndReturn(Nd4j.getOpFactory().createTransform(activationFn, preOutput.dup()));
-            INDArray output = activationFn.getActivation(preOutput.dup(), true);
-            scoreArr = Transforms.log(output, false).muli(labels);
         }
+
+        INDArray output = activationFn.getActivation(preOutput.dup(), true);
+        if(activationFn instanceof ActivationSoftmax && softmaxClipEps > 0.0){
+            BooleanIndexing.replaceWhere(output, softmaxClipEps, Conditions.lessThan(softmaxClipEps));
+            BooleanIndexing.replaceWhere(output, 1.0-softmaxClipEps, Conditions.greaterThan(1.0-softmaxClipEps));
+        }
+        INDArray scoreArr = Transforms.log(output, false).muli(labels);
 
         //Weighted loss function
         if (weights != null) {
@@ -111,10 +138,10 @@ public class LossMCXENT implements ILossFunction {
     @Override
     public INDArray computeGradient(INDArray labels, INDArray preOutput, IActivation activationFn, INDArray mask) {
         if (labels.size(1) != preOutput.size(1)) {
-            throw new IllegalArgumentException("Labels array numColumns (size(1) = " + labels.size(1)
-                            + ") does not match output layer" + " number of outputs (nOut = " + preOutput.size(1)
-                            + ") ");
-            
+            throw new IllegalArgumentException(
+                            "Labels array numColumns (size(1) = " + labels.size(1) + ") does not match output layer"
+                                            + " number of outputs (nOut = " + preOutput.size(1) + ") ");
+
         }
         INDArray grad;
         //INDArray output = Nd4j.getExecutioner().execAndReturn(Nd4j.getOpFactory().createTransform(activationFn, preOutput.dup()));
@@ -122,7 +149,7 @@ public class LossMCXENT implements ILossFunction {
 
         if (activationFn instanceof ActivationSoftmax) {
 
-            if(mask != null && LossUtil.isPerOutputMasking(output, mask)){
+            if (mask != null && LossUtil.isPerOutputMasking(output, mask)) {
                 throw new UnsupportedOperationException("Per output masking for MCXENT + softmax: not supported");
             }
 
@@ -170,11 +197,69 @@ public class LossMCXENT implements ILossFunction {
                         computeGradient(labels, preOutput, activationFn, mask));
     }
 
+    /**
+     * The opName of this function
+     *
+     * @return
+     */
+    @Override
+    public String name() {
+        return toString();
+    }
+
 
     @Override
     public String toString() {
         if (weights == null)
             return "LossMCXENT()";
         return "LossMCXENT(weights=" + weights + ")";
+    }
+
+
+    @Override
+    public SDVariable[] outputVariables() {
+        return new SDVariable[0];
+    }
+
+    @Override
+    public SDVariable[] outputVariables(String baseName) {
+        return new SDVariable[0];
+    }
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
+    }
+
+
+
+    @Override
+    public String opName() {
+        return "lossmcxent";
+    }
+
+    @Override
+    public Op.Type opType() {
+        return Op.Type.CUSTOM;
+    }
+
+    @Override
+    public void initFromTensorFlow(NodeDef nodeDef, SameDiff initWith, Map<String, AttrValue> attributesForNode, GraphDef graph) {
+
+    }
+
+    @Override
+    public void initFromOnnx(OnnxProto3.NodeProto node, SameDiff initWith, Map<String, OnnxProto3.AttributeProto> attributesForNode, OnnxProto3.GraphProto graph) {
+
+    }
+
+    @Override
+    public String onnxName() {
+        return "SoftmaxCrossEntropyWithLogits";
+    }
+
+    @Override
+    public String tensorflowName() {
+        return "SoftmaxCrossEntropyWithLogits";
     }
 }

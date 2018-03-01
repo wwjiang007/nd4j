@@ -2,7 +2,7 @@
     <parent>
         <artifactId>nd4j-backend-impls</artifactId>
         <groupId>org.nd4j</groupId>
-        <version>0.8.1-SNAPSHOT</version>
+        <version>0.9.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -10,7 +10,8 @@
     <name>nd4j-native-platform</name>
 
     <properties>
-        <openblas.version>0.2.19</openblas.version>
+        <openblas.version>0.2.20</openblas.version>
+        <mkl.version>2018.1</mkl.version>
         <nd4j.backend>nd4j-native</nd4j.backend>
     </properties>
 
@@ -18,9 +19,13 @@
         <dependency>
             <groupId>org.bytedeco.javacpp-presets</groupId>
             <artifactId>openblas-platform</artifactId>
-            <version>${openblas.version}-${javacpp-presets.version}</version>
+            <version>${openblas.version}-1.4.1-SNAPSHOT</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.bytedeco.javacpp-presets</groupId>
+            <artifactId>mkl-platform</artifactId>
+            <version>${mkl.version}-${javacpp-presets.version}</version>
+        </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>${nd4j.backend}</artifactId>
@@ -36,7 +41,31 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>${nd4j.backend}</artifactId>
             <version>${project.version}</version>
+            <classifier>${javacpp.platform.android-arm64}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>${nd4j.backend}</artifactId>
+            <version>${project.version}</version>
             <classifier>${javacpp.platform.android-x86}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>${nd4j.backend}</artifactId>
+            <version>${project.version}</version>
+            <classifier>${javacpp.platform.android-x86_64}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>${nd4j.backend}</artifactId>
+            <version>${project.version}</version>
+            <classifier>${javacpp.platform.ios-arm64}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>${nd4j.backend}</artifactId>
+            <version>${project.version}</version>
+            <classifier>${javacpp.platform.ios-x86_64}</classifier>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>

@@ -2,7 +2,7 @@
     <parent>
         <artifactId>nd4j-backend-impls</artifactId>
         <groupId>org.nd4j</groupId>
-        <version>0.8.1-SNAPSHOT</version>
+        <version>0.9.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -12,7 +12,11 @@
     <properties>
         <cuda.version>8.0</cuda.version>
         <cudnn.version>6.0</cudnn.version>
-        <env.LIBND4J_HOME>${basedir}/../../../../libnd4j/</env.LIBND4J_HOME>
+        <javacpp-presets.cuda.version>1.3</javacpp-presets.cuda.version>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.testTarget>1.8</maven.compiler.testTarget>
+        <maven.compiler.testSource>1.8</maven.compiler.testSource>
     </properties>
 
     <build>
@@ -34,9 +38,8 @@
                     </dependency>
                 </dependencies>
                 <configuration>
-                    <argLine>-Xmx8G</argLine>
                     <environmentVariables>
-                        <LD_LIBRARY_PATH>${env.LD_LIBRARY_PATH}:${user.dir}:${env.LIBND4J_HOME}/blasbuild/cuda/blas/</LD_LIBRARY_PATH>
+                        <LD_LIBRARY_PATH>${env.LD_LIBRARY_PATH}:${user.dir}:${libnd4jhome}/blasbuild/cuda/blas/</LD_LIBRARY_PATH>
                     </environmentVariables>
                     <testSourceDirectory>../../nd4j-tests/src/test/java</testSourceDirectory>
                     <includes>
@@ -93,13 +96,18 @@
                         <classPath>${project.build.outputDirectory}</classPath>
                     </classPaths>
                     <includePaths>
-                        <includePath>${env.LIBND4J_HOME}/blas</includePath>
-                        <includePath>${env.LIBND4J_HOME}/include</includePath>
-                        <includePath>${env.LIBND4J_HOME}/include/cnpy</includePath>
+                        <includePath>${libnd4jhome}/blas</includePath>
+                        <includePath>${libnd4jhome}/include</includePath>
+                        <includePath>${libnd4jhome}/include/helpers</includePath>
+                        <includePath>${libnd4jhome}/include/array</includePath>
+                        <includePath>${libnd4jhome}/include/memory</includePath>
+                        <includePath>${libnd4jhome}/include/graph</includePath>
+                        <includePath>${libnd4jhome}/include/cnpy</includePath>
+                        <includePath>${libnd4jhome}/include/indexing</includePath>
                     </includePaths>
                     <linkPaths>
-                        <linkPath>${env.LIBND4J_HOME}/blasbuild/cuda-${cuda.version}/blas</linkPath>
-                        <linkPath>${env.LIBND4J_HOME}/blasbuild/cuda/blas</linkPath>
+                        <linkPath>${libnd4jhome}/blasbuild/cuda-${cuda.version}/blas</linkPath>
+                        <linkPath>${libnd4jhome}/blasbuild/cuda/blas</linkPath>
                     </linkPaths>
                 </configuration>
                 <executions>
@@ -145,15 +153,15 @@
                         <configuration>
                             <rules>
                                 <requireProperty>
-                                    <property>env.LIBND4J_HOME</property>
+                                    <property>libnd4jhome</property>
                                     <message>You must set the LIBND4J_HOME environment variable!</message>
                                     <regex>.*/.*</regex>
                                     <regexMessage>!!! LIBND4J_HOME must be a valid unix path!</regexMessage>
                                 </requireProperty>
                                 <requireFilesExist>
                                     <files>
-                                        <file>${env.LIBND4J_HOME}/blas/NativeOps.h</file>
-                                        <file>${env.LIBND4J_HOME}/blasbuild/cuda/blas</file>
+                                        <file>${libnd4jhome}/blas/NativeOps.h</file>
+                                        <file>${libnd4jhome}/blasbuild/cuda/blas</file>
                                     </files>
                                     <message>!!! You have to compile libnd4j with cuda support first!</message>
                                 </requireFilesExist>
@@ -177,6 +185,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>5.0.2.RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.bytedeco</groupId>
             <artifactId>javacpp</artifactId>
             <version>${javacpp.version}</version>
@@ -184,12 +199,12 @@
         <dependency>
             <groupId>org.bytedeco.javacpp-presets</groupId>
             <artifactId>cuda</artifactId>
-            <version>${cuda.version}-${cudnn.version}-${javacpp-presets.version}</version>
+            <version>${cuda.version}-${cudnn.version}-${javacpp-presets.cuda.version}</version>
         </dependency>
         <dependency>
             <groupId>org.bytedeco.javacpp-presets</groupId>
             <artifactId>cuda</artifactId>
-            <version>${cuda.version}-${cudnn.version}-${javacpp-presets.version}</version>
+            <version>${cuda.version}-${cudnn.version}-${javacpp-presets.cuda.version}</version>
             <classifier>${dependency.platform}</classifier>
         </dependency>
 
@@ -252,6 +267,73 @@
                                 <compilerOption>/MT</compilerOption>
                             </compilerOptions>
                         </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>libnd4j-assembly</id>
+            <activation>
+                <property>
+                    <name>libnd4j-assembly</name>
+                </property>
+            </activation>
+            <properties>
+                <libnd4jhome>${project.build.directory}/libnd4j/</libnd4jhome>
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.nd4j</groupId>
+                    <artifactId>libnd4j</artifactId>
+                    <version>${project.version}</version>
+                    <type>zip</type>
+                    <classifier>${javacpp.platform}-cuda-${cuda.version}</classifier>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>libnd4j-checks</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>true</skip>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>3.0.2</version>
+                        <executions>
+                            <execution>
+                                <id>unpack</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.nd4j</groupId>
+                                            <artifactId>libnd4j</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>zip</type>
+                                            <classifier>${javacpp.platform}-cuda-${cuda.version}</classifier>
+                                            <overWrite>true</overWrite>
+                                            <outputDirectory>${project.build.directory}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

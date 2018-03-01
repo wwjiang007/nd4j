@@ -3,10 +3,12 @@ package org.nd4j.parameterserver.distributed;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.exception.ND4JIllegalStateException;
+import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.parameterserver.distributed.conf.VoidConfiguration;
+import org.nd4j.parameterserver.distributed.enums.ExecutionMode;
 import org.nd4j.parameterserver.distributed.enums.NodeRole;
 import org.nd4j.parameterserver.distributed.logic.*;
 import org.nd4j.parameterserver.distributed.logic.completion.Clipboard;
@@ -19,6 +21,7 @@ import org.nd4j.parameterserver.distributed.training.impl.SkipGramTrainer;
 import org.nd4j.parameterserver.distributed.transport.MulticastTransport;
 import org.nd4j.parameterserver.distributed.transport.RoutedTransport;
 import org.nd4j.parameterserver.distributed.transport.Transport;
+import org.nd4j.parameterserver.distributed.util.NetworkOrganizer;
 
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -155,6 +158,14 @@ public class VoidParameterServer {
     }
 
     /**
+     * This method returns True if initialization was started AND was finished, false otherwise
+     * @return
+     */
+    public boolean isInit() {
+        return initFinished.get();
+    }
+
+    /**
      * This method starts ParameterServer instance
      *
      * PLEASE NOTE: This method is blocking for first caller only
@@ -231,7 +242,11 @@ public class VoidParameterServer {
                     if (nodeRole == NodeRole.NONE)
                         nodeRole = voidConfiguration.getForcedRole();
 
-                    this.transport.init(voidConfiguration, clipboard, nodeRole, "127.0.0.1",
+                    // if we're using forced roles here, we'll assume that controllerAddress belongs to this box
+                    String localIp = voidConfiguration.getExecutionMode() == ExecutionMode.MANAGED
+                                    ? voidConfiguration.getControllerAddress() : "127.0.0.1";
+
+                    this.transport.init(voidConfiguration, clipboard, nodeRole, localIp,
                                     voidConfiguration.getUnicastPort(), shardIndex);
                 }
 
@@ -265,19 +280,18 @@ public class VoidParameterServer {
 
                         //executor.submit(processingRunnables[x);
 
-
-
+                        // TODO: maybe find the way to guarantee affinity in some other way, to make different devices usable as well?
+                        Nd4j.getAffinityManager().attachThreadToDevice(processingThreads[x],
+                                        Nd4j.getAffinityManager().getDeviceForCurrentThread());
                         processingThreads[x].setDaemon(true);
                         processingThreads[x].setName("VoidParameterServer messages handling thread");
                         processingThreads[x].start();
                     }
                 }
 
-                // TODO: uncomment this line on later stages
-                //if (!(NodeRole.SHARD == nodeRole && voidConfiguration.getShardAddresses().size() == 1)) {
+
                 log.info("Launching transport...");
                 transport.launch(Transport.ThreadingModel.DEDICATED_THREADS);
-                //}
                 trainer.init(this.voidConfiguration, this.transport, storage, clipboard);
 
                 initFinished.set(true);
@@ -320,8 +334,22 @@ public class VoidParameterServer {
             }
 
 
-        String sparkIp = System.getenv("SPARK_PUBLIC_DNS");
+        String sparkIp = null;
+
+
+        if (sparkIp == null && voidConfiguration.getNetworkMask() != null) {
+            NetworkOrganizer organizer = new NetworkOrganizer(voidConfiguration.getNetworkMask());
+            sparkIp = organizer.getMatchingAddress();
+        }
+
+        // last resort here...
+        if (sparkIp == null)
+            sparkIp = System.getenv("DL4J_VOID_IP");
+
+
         log.info("Got [{}] as sparkIp", sparkIp);
+        if (sparkIp == null)
+            throw new ND4JIllegalStateException("Can't get IP address for UDP communcation");
 
         // local IP from pair is used for shard only, so we don't care
         return Pair.create(result, sparkIp + ":" + voidConfiguration.getUnicastPort());
@@ -444,6 +472,10 @@ public class VoidParameterServer {
         //transport.sendMessage(message);
     }
 
+    public void execDistributedImmediately(@NonNull TrainingMessage message) {
+        transport.sendMessageToAllShards(message);
+    }
+
     public void execDistributed(@NonNull Frame<? extends TrainingMessage> messages) {
         transport.sendMessage(messages);
     }
@@ -471,5 +503,32 @@ public class VoidParameterServer {
         MeaningfulMessage response = transport.sendMessageAndGetResponse(message);
 
         return response.getPayload();
+    }
+
+    /**
+     * This method sends given message to all Shards
+     *
+     * @param message
+     */
+    public synchronized void sendMessageToAllShards(@NonNull VoidMessage message) {
+        transport.sendMessageToAllShards(message);
+    }
+
+    /**
+     * This method sends given message to all Clients
+     *
+     * @param message
+     */
+    public void sendMessageToAllClients(@NonNull VoidMessage message) {
+        this.sendMessageToAllClients(message, null);
+    }
+
+    /**
+     * This method sends given message to all Clients, excluding
+     *
+     * @param message
+     */
+    public synchronized void sendMessageToAllClients(@NonNull VoidMessage message, Long... exclusions) {
+        transport.sendMessageToAllClients(message);
     }
 }

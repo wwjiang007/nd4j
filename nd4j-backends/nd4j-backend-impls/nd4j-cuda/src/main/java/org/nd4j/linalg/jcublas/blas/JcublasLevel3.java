@@ -48,8 +48,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         //A = Shape.toOffsetZero(A);
         //B = Shape.toOffsetZero(B);
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(C, A, B);
 
@@ -63,12 +62,16 @@ public class JcublasLevel3 extends BaseLevel3 {
 
             int arch = CudaEnvironment.getInstance().getCurrentDeviceArchitecture();
 
-            if (CUDA_VERSION == 8000 && (arch == 53 || arch == 60)) {
+            if (CUDA_VERSION >= 8000 && (arch == 53 || arch == 60)) {
                 // on these selected archs we run with cublasHgemm
+                __half alphaHalf = new __half();
+                __half betaHalf = new __half();
+                new ShortPointer(alphaHalf).put((short) HalfIndexer.fromFloat(alpha));
+                new ShortPointer(betaHalf).put((short) HalfIndexer.fromFloat(beta));
+
                 cublasHgemm(new cublasContext(handle), convertTranspose(TransA), convertTranspose(TransB), M, N, K,
-                                new __half().x((short) HalfIndexer.fromFloat(alpha)),
-                                new __half(cAPointer.getDevicePointer()), lda, new __half(cBPointer.getDevicePointer()),
-                                ldb, new __half().x((short) HalfIndexer.fromFloat(beta)),
+                                alphaHalf, new __half(cAPointer.getDevicePointer()), lda,
+                                new __half(cBPointer.getDevicePointer()), ldb, betaHalf,
                                 new __half(cCPointer.getDevicePointer()), ldc);
             } else {
                 // CUDA_R_16F == 2 for CUDA 8
@@ -93,8 +96,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.FLOAT)
             logger.warn("FLOAT gemm called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(C, A, B);
 
@@ -122,8 +124,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.FLOAT)
             logger.warn("FLOAT symm called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(C, A, B);
 
@@ -152,8 +153,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.FLOAT)
             logger.warn("FLOAT syrk called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(C, A);
 
@@ -192,8 +192,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.FLOAT)
             logger.warn("FLOAT trsm called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(B, A);
 
@@ -222,8 +221,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.DOUBLE)
             logger.warn("DOUBLE gemm called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(C, A, B);
 
@@ -253,8 +251,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.DOUBLE)
             logger.warn("DOUBLE symm called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(C, A, B);
 
@@ -282,8 +279,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.DOUBLE)
             logger.warn("DOUBLE syrk called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(C, A);
 
@@ -309,8 +305,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.DOUBLE)
             logger.warn("DOUBLE syr2k called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(C, A, B);
 
@@ -338,8 +333,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.DOUBLE)
             logger.warn("DOUBLE trmm called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(B, A);
 
@@ -367,8 +361,7 @@ public class JcublasLevel3 extends BaseLevel3 {
         if (Nd4j.dataType() != DataBuffer.Type.DOUBLE)
             logger.warn("DOUBLE trsm called");
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         CudaContext ctx = allocator.getFlowController().prepareAction(B, A);
 

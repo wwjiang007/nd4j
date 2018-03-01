@@ -20,10 +20,13 @@
 package org.nd4j.linalg.api.ops.impl.transforms;
 
 import lombok.NonNull;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.functions.DifferentialFunction;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.List;
 
 /**
  * Boolean AND pairwise transform
@@ -32,7 +35,22 @@ import org.nd4j.linalg.api.ops.Op;
  */
 public class Not extends BaseTransformOp {
 
-    protected double comparable;
+    protected double comparable = 0.0;
+
+    public Not(SameDiff sameDiff, SDVariable i_v, boolean inPlace, double comparable) {
+        super(sameDiff, i_v, inPlace);
+        this.comparable = comparable;
+    }
+
+    public Not(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs, double comparable) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+        this.comparable = comparable;
+    }
+
+    public Not(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs, double comparable) {
+        super(sameDiff, i_v, extraArgs);
+        this.comparable = comparable;
+    }
 
     public Not() {}
 
@@ -69,61 +87,22 @@ public class Not extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "boolean_not";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
+    public String onnxName() {
+        return "Not";
+    }
+
+    @Override
+    public String tensorflowName() {
+        return "LogicalNot";
+    }
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
         return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return null;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return null;
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return 0;
-    }
-
-    @Override
-    public double op(double origin) {
-        return 0;
-    }
-
-    @Override
-    public float op(float origin) {
-        return 0;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return null;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-        return new Not(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-        return new Not(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
     }
 }

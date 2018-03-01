@@ -19,112 +19,58 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms.comparison;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import lombok.NonNull;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.api.ops.impl.transforms.BaseDynamicTransformOp;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Min function
  *
  * @author Adam Gibson
  */
-public class Min extends BaseTransformOp {
-
+public class Min extends BaseDynamicTransformOp {
     public Min() {}
 
-    public Min(INDArray x, INDArray y, INDArray z, long n) {
-        super(x, y, z, n);
+    public Min(SameDiff sameDiff, @NonNull SDVariable first, @NonNull SDVariable second){
+        this(sameDiff, new SDVariable[]{first, second}, false);
     }
 
-    public Min(INDArray x) {
-        super(x);
+    public Min( SameDiff sameDiff, SDVariable[] args, boolean inPlace) {
+        super(sameDiff, args, inPlace);
     }
 
-    public Min(INDArray x, INDArray z) {
-        super(x, z);
+    public Min( INDArray[] inputs, INDArray[] outputs) {
+        super(inputs, outputs);
     }
 
-    public Min(INDArray x, INDArray z, long n) {
-        super(x, z, n);
+
+    @Override
+    public String opName() {
+        return "minimum";
     }
 
     @Override
-    public int opNum() {
-        return 14;
+    public String onnxName() {
+       return "Min";
     }
 
     @Override
-    public String name() {
-        return "min";
+    public String tensorflowName() {
+        return "Minimum";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        double val = origin.absoluteValue().doubleValue();
-        return val < other ? origin : Nd4j.createComplexNumber(other, 0.0);
-    }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        float val = origin.absoluteValue().floatValue();
-        return val < other ? origin : Nd4j.createComplexNumber(other, 0.0);
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        SDVariable min = outputVariables()[0];
+        SDVariable eq1 = sameDiff.eq(larg(), min);
+        SDVariable eq2 = sameDiff.eq(rarg(), min);
 
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin.absoluteValue().doubleValue() < other.absoluteValue().doubleValue() ? origin : other;
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return FastMath.min(origin, other);
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return FastMath.min(origin, other);
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin;
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Min(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Min(xAlongDimension, z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Min(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Min(xAlongDimension, z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-
+        return Arrays.asList(eq1.mul(f1.get(0)), eq2.mul(f1.get(0)));
     }
 }

@@ -42,7 +42,8 @@ public abstract class BasicMemoryManager implements MemoryManager {
 
     /**
      * This method returns
-     * PLEASE NOTE: Cache options depend on specific implementations
+     * PLEASE NOTE: Cache options
+     * depend on specific implementations
      *
      * @param bytes
      * @param kind
@@ -50,7 +51,7 @@ public abstract class BasicMemoryManager implements MemoryManager {
      */
     @Override
     public Pointer allocate(long bytes, MemoryKind kind, boolean initialize) {
-        return null;
+        throw new UnsupportedOperationException("This method isn't available for this backend");
     }
 
     /**
@@ -103,7 +104,8 @@ public abstract class BasicMemoryManager implements MemoryManager {
 
         // not sure if we want to conform autoGcWindow here...
         if (frequency.get() > 0)
-            if (freqCounter.incrementAndGet() % frequency.get() == 0 && currentTime > getLastGcTime() + getAutoGcWindow()) {
+            if (freqCounter.incrementAndGet() % frequency.get() == 0
+                            && currentTime > getLastGcTime() + getAutoGcWindow()) {
                 System.gc();
                 lastGcTime.set(System.currentTimeMillis());
             }
@@ -163,7 +165,8 @@ public abstract class BasicMemoryManager implements MemoryManager {
             }
             cnt /= intervals.size();
             return cnt;
-        } else return 0;
+        } else
+            return 0;
 
     }
 

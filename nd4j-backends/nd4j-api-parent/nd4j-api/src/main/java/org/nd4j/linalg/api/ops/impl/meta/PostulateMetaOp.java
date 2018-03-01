@@ -1,10 +1,13 @@
 package org.nd4j.linalg.api.ops.impl.meta;
 
+import org.nd4j.autodiff.samediff.SDVariable;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.Accumulation;
 import org.nd4j.linalg.api.ops.ScalarOp;
 import org.nd4j.linalg.api.ops.TransformOp;
 import org.nd4j.linalg.api.ops.grid.OpDescriptor;
+
+import java.util.List;
 
 /**
  * You're NOT supposed to directly call this op. Do it on your own risk, only if you're absolutely have to.
@@ -39,7 +42,12 @@ public class PostulateMetaOp extends BaseMetaOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "meta_postulate";
+    }
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
 }

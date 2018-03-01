@@ -1,8 +1,11 @@
 package org.nd4j.linalg.api.ops.impl.broadcast;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseBroadcastOp;
+
+import java.util.List;
 
 /**
  * Broadcast reverse divide
@@ -16,6 +19,33 @@ public class BroadcastRDivOp extends BaseBroadcastOp {
         super(x, y, z, dimension);
     }
 
+    public BroadcastRDivOp(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, int[] dimension) {
+        super(sameDiff, i_v1, i_v2, dimension);
+    }
+
+    public BroadcastRDivOp(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, boolean inPlace, int[] dimension) {
+        super(sameDiff, i_v1, i_v2, inPlace, dimension);
+    }
+
+    public BroadcastRDivOp(SameDiff sameDiff) {
+        super(sameDiff);
+    }
+
+    public BroadcastRDivOp(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, int[] dimension, Object[] extraArgs) {
+        super(sameDiff, i_v1, i_v2, dimension, extraArgs);
+    }
+
+    public BroadcastRDivOp(SameDiff sameDiff, SDVariable i_v, int[] dimension, boolean inPlace) {
+        super(sameDiff, i_v, dimension, inPlace);
+    }
+
+    public BroadcastRDivOp(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, int[] dimension, Object[] extraArgs) {
+        super(sameDiff, i_v, shape, inPlace, dimension, extraArgs);
+    }
+
+    public BroadcastRDivOp(SameDiff sameDiff, SDVariable i_v, int[] dimension, Object[] extraArgs) {
+        super(sameDiff, i_v, dimension, extraArgs);
+    }
 
     @Override
     public int opNum() {
@@ -23,49 +53,22 @@ public class BroadcastRDivOp extends BaseBroadcastOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "broadcastrdiv";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin.rdiv(other);
+    public String onnxName() {
+        return "Div";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin.rdiv(other);
+    public String tensorflowName() {
+        return "div";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin.rdiv(other);
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
-
-    @Override
-    public float op(float origin, float other) {
-        return other / origin;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return other / origin;
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin;
-    }
-
-
 }

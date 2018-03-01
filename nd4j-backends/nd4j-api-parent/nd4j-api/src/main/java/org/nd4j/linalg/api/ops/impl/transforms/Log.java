@@ -19,12 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.apache.commons.math3.util.FastMath;
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.util.ComplexUtil;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Log elementwise function
@@ -32,6 +33,18 @@ import org.nd4j.linalg.util.ComplexUtil;
  * @author Adam Gibson
  */
 public class Log extends BaseTransformOp {
+    public Log(SameDiff sameDiff, SDVariable i_v, boolean inPlace) {
+        super(sameDiff, i_v, inPlace);
+    }
+
+    public Log(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+    }
+
+    public Log(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs) {
+        super(sameDiff, i_v, extraArgs);
+    }
+
     public Log() {}
 
     public Log(INDArray x, INDArray z) {
@@ -56,71 +69,26 @@ public class Log extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "log";
     }
 
+
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return ComplexUtil.log(origin);
+    public String onnxName() {
+        return "Log";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return ComplexUtil.log(origin);
+    public String tensorflowName() {
+        return "Log";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return ComplexUtil.log(origin);
-    }
 
     @Override
-    public float op(float origin, float other) {
-        return (float) FastMath.log(origin);
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return FastMath.log(origin);
-    }
-
-    @Override
-    public double op(double origin) {
-        return FastMath.log(origin);
-    }
-
-    @Override
-    public float op(float origin) {
-        return (float) FastMath.log(origin);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return ComplexUtil.log(origin);
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Log(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Log(xAlongDimension, z.vectorAlongDimension(index, dimension), x.lengthLong());
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Log(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length());
-        else
-            return new Log(xAlongDimension, z.tensorAlongDimension(index, dimension), x.lengthLong());
-
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        f().validateDifferentialFunctionsameDiff(arg());
+        SDVariable toInverse = sameDiff.setupFunction(f().div(i_v.get(0),arg()));
+        return Collections.singletonList(toInverse);
     }
 }

@@ -20,6 +20,8 @@
 package org.nd4j.linalg.jcublas;
 
 
+import lombok.val;
+import org.nd4j.jita.allocator.enums.AllocationStatus;
 import org.nd4j.jita.allocator.enums.CudaConstants;
 import org.nd4j.jita.allocator.impl.AllocationPoint;
 import org.nd4j.jita.allocator.impl.AtomicAllocator;
@@ -36,6 +38,7 @@ import org.nd4j.linalg.jcublas.context.CudaContext;
 import org.nd4j.nativeblas.NativeOpsHolder;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -77,7 +80,7 @@ public class JCublasNDArray extends BaseNDArray {
      * @param offset   the desired offset
      * @param ordering the ordering of the JCublasNDArray
      */
-    public JCublasNDArray(float[] data, int[] shape, int offset, char ordering) {
+    public JCublasNDArray(float[] data, int[] shape, long offset, char ordering) {
         super(data, shape, offset, ordering);
     }
 
@@ -90,7 +93,7 @@ public class JCublasNDArray extends BaseNDArray {
      * @param offset   the desired offset
      * @param ordering the ordering of the JCublasNDArray
      */
-    public JCublasNDArray(int[] shape, int[] stride, int offset, char ordering) {
+    public JCublasNDArray(int[] shape, int[] stride, long offset, char ordering) {
         super(shape, stride, offset, ordering);
     }
 
@@ -103,7 +106,7 @@ public class JCublasNDArray extends BaseNDArray {
      * @param ordering the ordering of the JCublasNDArray
      * @param initialize Whether to initialize the INDArray. If true: initialize. If false: don't.
      */
-    public JCublasNDArray(int[] shape, int[] stride, int offset, char ordering, boolean initialize) {
+    public JCublasNDArray(int[] shape, int[] stride, long offset, char ordering, boolean initialize) {
         super(shape, stride, offset, ordering, initialize);
     }
 
@@ -121,7 +124,7 @@ public class JCublasNDArray extends BaseNDArray {
 
     }
 
-    public JCublasNDArray(int[] shape, int offset, char ordering) {
+    public JCublasNDArray(int[] shape, long offset, char ordering) {
 
         super(shape, offset, ordering);
 
@@ -182,12 +185,12 @@ public class JCublasNDArray extends BaseNDArray {
 
     }
 
-    public JCublasNDArray(float[] data, int[] shape, int[] stride, int offset, char ordering) {
+    public JCublasNDArray(float[] data, int[] shape, int[] stride, long offset, char ordering) {
         super(data, shape, stride, offset, ordering);
 
     }
 
-    public JCublasNDArray(DataBuffer data, int[] shape, int[] stride, int offset) {
+    public JCublasNDArray(DataBuffer data, int[] shape, int[] stride, long offset) {
         super(data, shape, stride, offset);
     }
 
@@ -199,7 +202,7 @@ public class JCublasNDArray extends BaseNDArray {
         super(data, shape);
     }
 
-    public JCublasNDArray(DataBuffer buffer, int[] shape, int offset) {
+    public JCublasNDArray(DataBuffer buffer, int[] shape, long offset) {
         super(buffer, shape, offset);
     }
 
@@ -213,7 +216,7 @@ public class JCublasNDArray extends BaseNDArray {
         super(data, shape);
     }
 
-    public JCublasNDArray(float[] data, int[] shape, int offset) {
+    public JCublasNDArray(float[] data, int[] shape, long offset) {
 
         super(data, shape, offset);
 
@@ -227,7 +230,7 @@ public class JCublasNDArray extends BaseNDArray {
      * @param stride the stride of the JCublasNDArray
      * @param offset the desired offset
      */
-    public JCublasNDArray(int[] shape, int[] stride, int offset) {
+    public JCublasNDArray(int[] shape, int[] stride, long offset) {
 
         super(shape, stride, offset);
     }
@@ -243,7 +246,7 @@ public class JCublasNDArray extends BaseNDArray {
         super(shape, stride);
     }
 
-    public JCublasNDArray(int[] shape, int offset) {
+    public JCublasNDArray(int[] shape, long offset) {
         super(shape, offset);
     }
 
@@ -294,7 +297,7 @@ public class JCublasNDArray extends BaseNDArray {
     }
 
 
-    public JCublasNDArray(float[] data, int[] shape, int[] stride, int offset) {
+    public JCublasNDArray(float[] data, int[] shape, int[] stride, long offset) {
         super(data, shape, stride, offset);
     }
 
@@ -304,11 +307,11 @@ public class JCublasNDArray extends BaseNDArray {
 
 
     public JCublasNDArray(JCublasNDArray doubleMatrix) {
-        this(new int[] {doubleMatrix.rows, doubleMatrix.columns});
+        this(new int[] {doubleMatrix.rows(), doubleMatrix.columns()});
         this.data = dup().data();
     }
 
-    public JCublasNDArray(double[] data, int[] shape, int[] stride, int offset) {
+    public JCublasNDArray(double[] data, int[] shape, int[] stride, long offset) {
         super(data, shape, stride, offset);
     }
 
@@ -320,7 +323,7 @@ public class JCublasNDArray extends BaseNDArray {
         super(data, ordering);
     }
 
-    public JCublasNDArray(DataBuffer buffer, int[] shape, int offset, char ordering) {
+    public JCublasNDArray(DataBuffer buffer, int[] shape, long offset, char ordering) {
         super(buffer, shape, offset, ordering);
     }
 
@@ -330,7 +333,7 @@ public class JCublasNDArray extends BaseNDArray {
         super(buffer);
     }
 
-    public JCublasNDArray(DataBuffer buffer, int[] shape, int[] stride, int offset, char ordering) {
+    public JCublasNDArray(DataBuffer buffer, int[] shape, int[] stride, long offset, char ordering) {
         super(buffer, shape, stride, offset, ordering);
     }
 
@@ -350,7 +353,7 @@ public class JCublasNDArray extends BaseNDArray {
         super(data, shape, ordering);
     }
 
-    public JCublasNDArray(double[] data, int[] shape, int[] stride, int offset, char ordering) {
+    public JCublasNDArray(double[] data, int[] shape, int[] stride, long offset, char ordering) {
         super(data, shape, stride, offset, ordering);
     }
 
@@ -472,8 +475,7 @@ public class JCublasNDArray extends BaseNDArray {
 
     @Override
     public INDArray permutei(int... rearrange) {
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+        Nd4j.getExecutioner().push();
 
         return super.permutei(rearrange);
     }
@@ -486,19 +488,70 @@ public class JCublasNDArray extends BaseNDArray {
      * @return
      */
     @Override
-    public synchronized INDArray unsafeDuplication() {
-        INDArray ret = Nd4j.createUninitialized(this.shape(), this.ordering());
+    public INDArray unsafeDuplication() {
+        return unsafeDuplication(true);
+    }
 
-        if (Nd4j.getExecutioner() instanceof GridExecutioner)
-            ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+    @Override
+    public INDArray unsafeDuplication(boolean blocking) {
+        DataBuffer rb = Nd4j.getMemoryManager().getCurrentWorkspace() == null ? Nd4j.getDataBufferFactory().createSame(this.data, false) : Nd4j.getDataBufferFactory().createSame(this.data, false, Nd4j.getMemoryManager().getCurrentWorkspace());
+
+        INDArray ret = Nd4j.createArrayFromShapeBuffer(rb, this.shapeInfoDataBuffer());
+
+
+        if (blocking)
+            Nd4j.getExecutioner().push();
+
+
+        //Nd4j.getExecutioner().commit();
 
         AtomicAllocator allocator = AtomicAllocator.getInstance();
         CudaContext context = (CudaContext) allocator.getDeviceContext().getContext();
 
-        allocator.memcpyDevice(ret.data(), allocator.getAllocationPoint(this.data).getDevicePointer(),
-                        this.data.length() * this.data().getElementSize(), 0, context);
-        context.syncOldStream();
+        AllocationPoint srcPoint = allocator.getAllocationPoint(this);
+        AllocationPoint dstPoint = allocator.getAllocationPoint(ret);
 
+        int route = 0;
+//        long time1 = System.currentTimeMillis();
+
+        if (dstPoint.getAllocationStatus() == AllocationStatus.DEVICE && srcPoint.getAllocationStatus() == AllocationStatus.DEVICE) {
+            // d2d copy
+            route = 1;
+            NativeOpsHolder.getInstance().getDeviceNativeOps().memcpyAsync(dstPoint.getDevicePointer(), srcPoint.getDevicePointer(), this.data.length() * this.data.getElementSize(), CudaConstants.cudaMemcpyDeviceToDevice, blocking ? context.getOldStream() : context.getSpecialStream());
+            dstPoint.tickDeviceWrite();
+        } else if (dstPoint.getAllocationStatus() == AllocationStatus.HOST && srcPoint.getAllocationStatus() == AllocationStatus.DEVICE) {
+            route = 2;
+            NativeOpsHolder.getInstance().getDeviceNativeOps().memcpyAsync(dstPoint.getHostPointer(), srcPoint.getDevicePointer(), this.data.length() * this.data.getElementSize(), CudaConstants.cudaMemcpyDeviceToHost, blocking ? context.getOldStream() : context.getSpecialStream());
+            dstPoint.tickHostWrite();
+        } else if (dstPoint.getAllocationStatus() == AllocationStatus.DEVICE && srcPoint.getAllocationStatus() == AllocationStatus.HOST) {
+            route = 3;
+            NativeOpsHolder.getInstance().getDeviceNativeOps().memcpyAsync(dstPoint.getDevicePointer(), srcPoint.getHostPointer(), this.data.length() * this.data.getElementSize(), CudaConstants.cudaMemcpyHostToDevice, blocking ? context.getOldStream() : context.getSpecialStream());
+            dstPoint.tickDeviceWrite();
+        } else {
+            route = 4;
+            NativeOpsHolder.getInstance().getDeviceNativeOps().memcpyAsync(dstPoint.getHostPointer(), srcPoint.getHostPointer(), this.data.length() * this.data.getElementSize(), CudaConstants.cudaMemcpyHostToHost, blocking ? context.getOldStream() : context.getSpecialStream());
+            dstPoint.tickHostWrite();
+        }
+
+
+        //allocator.memcpyDevice(ret.data(), allocator.getAllocationPoint(this.data).getDevicePointer(), this.data.length() * this.data().getElementSize(), 0, context);
+
+        if (blocking)
+            context.syncOldStream();
+        else
+            context.syncSpecialStream();
+
+//        AtomicAllocator.getInstance().synchronizeHostData(ret);
+/*
+        long time2 = System.currentTimeMillis();
+
+        long bytes = this.data.length() * this.data.getElementSize();
+        long spent = time2 - time1;
+
+        float bw = (1000 * bytes / spent) / 1024 / 1024.0f / 1024; //1000 / spent * bytes / 1024 / 1024 / 1024;
+
+        log.info("Route: [{}]; Blocking: {}; {} bytes; {} ms; Bandwidth: {} GB/s", route, blocking, bytes, spent, String.format("%.2f", bw));
+*/
         return ret;
     }
 
@@ -600,8 +653,7 @@ public class JCublasNDArray extends BaseNDArray {
         INDArray copy = null;
 
         if (!this.isView()) {
-            if (Nd4j.getExecutioner() instanceof GridExecutioner)
-                ((GridExecutioner) Nd4j.getExecutioner()).flushQueue();
+            Nd4j.getExecutioner().commit();
 
             DataBuffer buffer = Nd4j.createBuffer(this.lengthLong(), false);
 
@@ -639,4 +691,36 @@ public class JCublasNDArray extends BaseNDArray {
 
         return copy;
     }
+
+
+    @Override
+    public INDArray convertToFloats() {
+        if (data.dataType() == DataBuffer.Type.FLOAT)
+            return this;
+
+        val factory = Nd4j.getNDArrayFactory();
+        val buffer = Nd4j.createBuffer(new int[]{this.length()}, DataBuffer.Type.FLOAT);
+
+        factory.convertDataEx(convertType(data.dataType()), AtomicAllocator.getInstance().getHostPointer(this.data()), DataBuffer.TypeEx.FLOAT, AtomicAllocator.getInstance().getHostPointer(buffer), buffer.length());
+
+        AtomicAllocator.getInstance().getAllocationPoint(buffer).tickHostWrite();
+
+        return Nd4j.createArrayFromShapeBuffer(buffer, this.shapeInformation);
+    }
+
+    @Override
+    public INDArray convertToDoubles() {
+        if (data.dataType() == DataBuffer.Type.DOUBLE)
+            return this;
+
+        val factory = Nd4j.getNDArrayFactory();
+        val buffer = Nd4j.createBuffer(new int[]{this.length()}, DataBuffer.Type.DOUBLE);
+
+        factory.convertDataEx(convertType(data.dataType()), AtomicAllocator.getInstance().getHostPointer(this.data()), DataBuffer.TypeEx.DOUBLE, AtomicAllocator.getInstance().getHostPointer(buffer), buffer.length());
+
+        AtomicAllocator.getInstance().getAllocationPoint(buffer).tickHostWrite();
+
+        return Nd4j.createArrayFromShapeBuffer(buffer, this.shapeInformation);
+    }
+
 }

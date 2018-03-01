@@ -19,12 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.api.ops.TransformOp;
-import org.nd4j.linalg.factory.Nd4j;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  *
@@ -35,6 +36,25 @@ import org.nd4j.linalg.factory.Nd4j;
 public class RectifedLinear extends BaseTransformOp {
     private double cutoff = 0.0;
 
+    public RectifedLinear(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, boolean inPlace, double cutoff) {
+        super(sameDiff, i_v1, i_v2, inPlace);
+        this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
+    }
+
+    public RectifedLinear(SameDiff sameDiff, SDVariable i_v1, SDVariable i_v2, Object[] extraArgs, double cutoff) {
+        super(sameDiff, i_v1, i_v2, extraArgs);
+        this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
+    }
+
+    public RectifedLinear(SameDiff sameDiff, SDVariable i_v, boolean inPlace, double cutoff) {
+        super(sameDiff, i_v, inPlace);
+        this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
+
+    }
+
     public RectifedLinear() {
         this.extraArgs = new Object[] {cutoff};
     }
@@ -42,25 +62,25 @@ public class RectifedLinear extends BaseTransformOp {
     public RectifedLinear(INDArray x, INDArray z, double cutoff) {
         super(x, z);
         this.cutoff = cutoff;
-        init(x,y,z,n);  //Need to re-init to properly set cutoff in extra args array
+        init(x, y, z, n); //Need to re-init to properly set cutoff in extra args array
     }
 
     public RectifedLinear(INDArray x, INDArray z, long n, double cutoff) {
         super(x, z, n);
         this.cutoff = cutoff;
-        init(x,y,z,n);
+        init(x, y, z, n);
     }
 
     public RectifedLinear(INDArray x, INDArray y, INDArray z, long n, double cutoff) {
         super(x, y, z, n);
         this.cutoff = cutoff;
-        init(x,y,z,n);
+        init(x, y, z, n);
     }
 
     public RectifedLinear(INDArray x, double cutoff) {
         super(x);
         this.cutoff = cutoff;
-        init(x,y,z,n);
+        init(x, y, z, n);
     }
 
     public RectifedLinear(INDArray x, INDArray z) {
@@ -89,85 +109,30 @@ public class RectifedLinear extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "relu";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return origin.realComponent().doubleValue() < cutoff ? Nd4j.createComplexNumber(cutoff, 0) : origin;
+    public String onnxName() {
+        return "Relu";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return origin.realComponent().doubleValue() < cutoff ? Nd4j.createComplexNumber(cutoff, 0) : origin;
+    public String tensorflowName() {
+        return "Relu";
     }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return origin.realComponent().doubleValue() < cutoff ? Nd4j.createComplexNumber(cutoff, 0) : origin;
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return origin < cutoff ? (float) cutoff : origin;
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return origin < cutoff ? cutoff : origin;
-    }
-
-    @Override
-    public double op(double origin) {
-        return origin < cutoff ? cutoff : origin;
-
-    }
-
-    @Override
-    public float op(float origin) {
-        return origin < cutoff ? (float) cutoff : origin;
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return origin.realComponent().doubleValue() < cutoff ? Nd4j.createComplexNumber(cutoff, 0) : origin;
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new RectifedLinear(xAlongDimension, y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length(), cutoff);
-        else
-            return new RectifedLinear(xAlongDimension, z.vectorAlongDimension(index, dimension),
-                            xAlongDimension.length(), cutoff);
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new RectifedLinear(xAlongDimension, y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length(), cutoff);
-        else
-            return new RectifedLinear(xAlongDimension, z.tensorAlongDimension(index, dimension),
-                            xAlongDimension.length(), cutoff);
-
-    }
-
-    @Override
-    public TransformOp derivative() {
-        return new Step(x, y, z, n, cutoff);
-    }
-
     @Override
     public void init(INDArray x, INDArray y, INDArray z, long n) {
         super.init(x, y, z, n);
         this.extraArgs = new Object[] {cutoff};
+    }
+
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> i_v) {
+        SDVariable step = new Step(sameDiff,arg(),false,cutoff).outputVariables()[0];
+        SDVariable ret = step.mul(i_v.get(0));
+        return Collections.singletonList(ret);
     }
 }

@@ -2,11 +2,11 @@ package org.nd4j.linalg.activations.impl;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.nd4j.linalg.activations.BaseActivationFunction;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.impl.transforms.ELU;
-import org.nd4j.linalg.api.ops.impl.transforms.ELUDerivative;
+import org.nd4j.linalg.api.ops.impl.transforms.gradient.ELUDerivative;
 import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.indexing.BooleanIndexing;
 import org.nd4j.linalg.indexing.conditions.Conditions;
@@ -68,7 +68,7 @@ public class ActivationELU extends BaseActivationFunction {
         }
 
         else {
-            INDArray dLdz = Nd4j.getExecutioner().execAndReturn(new ELU(in).derivative());
+            INDArray dLdz = Nd4j.getExecutioner().execAndReturn(new ELUDerivative(in));
             dLdz.muli(epsilon);
             return new Pair<>(dLdz, null);
         }

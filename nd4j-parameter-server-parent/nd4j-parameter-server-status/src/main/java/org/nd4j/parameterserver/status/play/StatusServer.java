@@ -6,6 +6,7 @@ import org.nd4j.parameterserver.model.MasterStatus;
 import org.nd4j.parameterserver.model.ServerTypeJson;
 import org.nd4j.parameterserver.model.SlaveStatus;
 import org.nd4j.parameterserver.model.SubscriberState;
+import play.Mode;
 import play.libs.F;
 import play.libs.Json;
 import play.mvc.Result;
@@ -43,7 +44,7 @@ public class StatusServer {
      * server defaults to port 9000.
      *
      * The end points are:
-     * /type: returns the type information (master/slave)
+     * /opType: returns the opType information (master/slave)
      * /started: if it's a master node, it returns master:started/stopped and responder:started/stopped
      * /connectioninfo: See the SlaveConnectionInfo and MasterConnectionInfo classes for fields.
      * /ids: the list of ids for all of the subscribers
@@ -71,7 +72,7 @@ public class StatusServer {
             }
         });
 
-        dsl.GET("/type/:id").routeTo(new F.Function<String, Result>() {
+        dsl.GET("/opType/:id").routeTo(new F.Function<String, Result>() {
             @Override
             public Result apply(String id) throws Throwable {
                 return ok(toJson(ServerTypeJson.builder()
@@ -116,7 +117,7 @@ public class StatusServer {
             }
         });
 
-        Server server = Server.forRouter(dsl.build(), statusServerPort);
+        Server server = Server.forRouter(dsl.build(), Mode.PROD, statusServerPort);
 
         return server;
 

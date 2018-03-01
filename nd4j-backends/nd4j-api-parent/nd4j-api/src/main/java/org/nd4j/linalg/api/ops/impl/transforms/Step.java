@@ -19,11 +19,13 @@
 
 package org.nd4j.linalg.api.ops.impl.transforms;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
+import org.nd4j.imports.NoOpNameFoundException;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseTransformOp;
-import org.nd4j.linalg.api.ops.Op;
-import org.nd4j.linalg.factory.Nd4j;
+
+import java.util.List;
 
 /**
  * Unit step function.
@@ -33,48 +35,76 @@ import org.nd4j.linalg.factory.Nd4j;
 public class Step extends BaseTransformOp {
     private final double cutoff;
 
+    public Step(SameDiff sameDiff, SDVariable i_v, boolean inPlace, double cutoff) {
+        super(sameDiff, i_v, inPlace);
+        this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
+
+    }
+
+    public Step(SameDiff sameDiff, SDVariable i_v, int[] shape, boolean inPlace, Object[] extraArgs, double cutoff) {
+        super(sameDiff, i_v, shape, inPlace, extraArgs);
+        this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
+    }
+
+    public Step(SameDiff sameDiff, SDVariable i_v, Object[] extraArgs, double cutoff) {
+        super(sameDiff, i_v, extraArgs);
+        this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
+    }
+
     public Step() {
         cutoff = 0.0;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     public Step(INDArray x, INDArray z) {
         super(x, z);
         cutoff = 0.0;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     public Step(INDArray x, INDArray z, long n) {
         super(x, z, n);
         cutoff = 0.0;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     public Step(INDArray x, INDArray y, INDArray z, long n) {
         super(x, y, z, n);
         cutoff = 0.0;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     public Step(INDArray x) {
         super(x);
         cutoff = 0.0;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     public Step(INDArray x, INDArray z, double cutoff) {
         super(x, z);
         this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     public Step(INDArray x, INDArray z, long n, double cutoff) {
         super(x, z, n);
         this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     public Step(INDArray x, INDArray y, INDArray z, long n, double cutoff) {
         super(x, y, z, n);
         this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     public Step(INDArray x, double cutoff) {
         super(x);
         this.cutoff = cutoff;
+        this.extraArgs = new Object[] {cutoff};
     }
 
     @Override
@@ -83,79 +113,29 @@ public class Step extends BaseTransformOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "step";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        return (origin.realComponent().doubleValue() > cutoff ? Nd4j.createDouble(1, 0) : Nd4j.createDouble(0, 0));
+    public String onnxName() {
+        throw new NoOpNameFoundException("No onnx op opName found for " +  opName());
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        return (origin.realComponent().doubleValue() > cutoff ? Nd4j.createDouble(1, 0) : Nd4j.createDouble(0, 0));
+    public String tensorflowName() {
+        throw new NoOpNameFoundException("No tensorflow op opName found for " +  opName());
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        return (origin.realComponent().doubleValue() > cutoff ? Nd4j.createDouble(1, 0) : Nd4j.createDouble(0, 0));
-    }
-
-    @Override
-    public float op(float origin, float other) {
-        return (origin > cutoff ? 1.0f : 0.0f);
-    }
-
-    @Override
-    public double op(double origin, double other) {
-        return (origin > cutoff ? 1.0 : 0.0);
-    }
-
-    @Override
-    public double op(double origin) {
-        return (origin > cutoff ? 1.0 : 0.0);
-    }
-
-    @Override
-    public float op(float origin) {
-        return (origin > cutoff ? 1.0f : 0.0f);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        return (origin.realComponent().doubleValue() > cutoff ? Nd4j.createDouble(1, 0) : Nd4j.createDouble(0, 0));
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        INDArray xAlongDimension = x.vectorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Step(x.vectorAlongDimension(index, dimension), y.vectorAlongDimension(index, dimension),
-                            z.vectorAlongDimension(index, dimension), xAlongDimension.length(), cutoff);
-        else
-            return new Step(x.vectorAlongDimension(index, dimension), z.vectorAlongDimension(index, dimension),
-                            xAlongDimension.length(), cutoff);
-
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        INDArray xAlongDimension = x.tensorAlongDimension(index, dimension);
-
-        if (y() != null)
-            return new Step(x.tensorAlongDimension(index, dimension), y.tensorAlongDimension(index, dimension),
-                            z.tensorAlongDimension(index, dimension), xAlongDimension.length(), cutoff);
-        else
-            return new Step(x.tensorAlongDimension(index, dimension), z.tensorAlongDimension(index, dimension),
-                            xAlongDimension.length(), cutoff);
-
-    }
 
     @Override
     public void init(INDArray x, INDArray y, INDArray z, long n) {
         super.init(x, y, z, n);
         this.extraArgs = new Object[] {cutoff};
+    }
+
+    @Override
+    public List<SDVariable> doDiff(List<SDVariable> f1) {
+        return null;
     }
 }

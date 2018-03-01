@@ -21,7 +21,7 @@ package org.nd4j.linalg;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.math3.util.Pair;
+import org.nd4j.linalg.primitives.Pair;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -199,6 +199,30 @@ public class NDArrayTestsFortran extends BaseNd4jTest {
     }
 
 
+    @Test
+    public void testBroadcastingGenerated() {
+        int[][] broadcastShape = NDArrayCreationUtil.getRandomBroadCastShape(7, 6, 10);
+        List<List<Pair<INDArray, String>>> broadCastList = new ArrayList<>(broadcastShape.length);
+        for (int[] shape : broadcastShape) {
+            List<Pair<INDArray, String>> arrShape = NDArrayCreationUtil.get6dPermutedWithShape(7, shape);
+            broadCastList.add(arrShape);
+            broadCastList.add(NDArrayCreationUtil.get6dReshapedWithShape(7, shape));
+            broadCastList.add(NDArrayCreationUtil.getAll6dTestArraysWithShape(7, shape));
+        }
+
+        for (List<Pair<INDArray, String>> b : broadCastList) {
+            for (Pair<INDArray, String> val : b) {
+                INDArray inputArrBroadcast = val.getFirst();
+                int[] destShape = NDArrayCreationUtil.broadcastToShape(inputArrBroadcast.shape(), 7);
+                INDArray output = inputArrBroadcast
+                                .broadcast(NDArrayCreationUtil.broadcastToShape(inputArrBroadcast.shape(), 7));
+                assertArrayEquals(destShape, output.shape());
+            }
+        }
+
+
+
+    }
 
     @Test
     public void testBroadCasting() {
@@ -211,6 +235,13 @@ public class NDArrayTestsFortran extends BaseNd4jTest {
         INDArray testR2 = Nd4j.create(new double[][] {{0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3}, {0, 1, 2, 3}});
         assertEquals(testR2, r2);
 
+    }
+
+    @Test
+    public void testOneTensor() {
+        INDArray arr = Nd4j.ones(1, 1, 1, 1, 1, 1, 1);
+        INDArray matrixToBroadcast = Nd4j.ones(1, 1);
+        assertEquals(matrixToBroadcast.broadcast(arr.shape()), arr);
     }
 
     @Test
@@ -238,6 +269,13 @@ public class NDArrayTestsFortran extends BaseNd4jTest {
         assertEquals(getFailureMessage(), shouldIndex, sorted[0]);
 
 
+    }
+
+    @Test
+    public void testNd4jSortScalar() {
+        INDArray linspace = Nd4j.linspace(1, 8, 8);
+        INDArray sorted = Nd4j.sort(linspace, 1, false);
+        System.out.println(sorted);
     }
 
     @Test
@@ -1119,8 +1157,8 @@ public class NDArrayTestsFortran extends BaseNd4jTest {
 
             assertEquals(tFirst0.offset(), t0.getFirstTensorOffset());
             assertEquals(tFirst1.offset(), t1.getFirstTensorOffset());
-            int separation0 = tSecond0.offset() - tFirst0.offset();
-            int separation1 = tSecond1.offset() - tFirst1.offset();
+            long separation0 = tSecond0.offset() - tFirst0.offset();
+            long separation1 = tSecond1.offset() - tFirst1.offset();
             assertEquals(separation0, t0.getTensorStartSeparation());
             assertEquals(separation1, t1.getTensorStartSeparation());
 
@@ -1129,8 +1167,8 @@ public class NDArrayTestsFortran extends BaseNd4jTest {
                 assertEquals(tad0.length(), t0.getTensorLength());
                 assertEquals(tad0.elementWiseStride(), t0.getElementWiseStride());
 
-                int offset = tad0.offset();
-                int calcOffset = t0.getFirstTensorOffset() + i * t0.getTensorStartSeparation();
+                long offset = tad0.offset();
+                long calcOffset = t0.getFirstTensorOffset() + i * t0.getTensorStartSeparation();
                 assertEquals(offset, calcOffset);
             }
 
@@ -1139,8 +1177,8 @@ public class NDArrayTestsFortran extends BaseNd4jTest {
                 assertEquals(tad1.length(), t1.getTensorLength());
                 assertEquals(tad1.elementWiseStride(), t1.getElementWiseStride());
 
-                int offset = tad1.offset();
-                int calcOffset = t1.getFirstTensorOffset() + i * t1.getTensorStartSeparation();
+                long offset = tad1.offset();
+                long calcOffset = t1.getFirstTensorOffset() + i * t1.getTensorStartSeparation();
                 assertEquals(offset, calcOffset);
             }
         }

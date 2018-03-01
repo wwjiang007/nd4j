@@ -19,6 +19,7 @@
 
 package org.nd4j.linalg.api.ops.executioner;
 
+import org.bytedeco.javacpp.Pointer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.*;
 import org.nd4j.linalg.api.ops.aggregates.Aggregate;
@@ -28,6 +29,7 @@ import org.nd4j.linalg.api.rng.Random;
 import org.nd4j.linalg.cache.TADManager;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -43,11 +45,11 @@ public interface OpExecutioner {
     }
 
     enum ProfilingMode {
-        DISABLED, NAN_PANIC, INF_PANIC, ANY_PANIC, OPERATIONS, METHODS, ALL
+        DISABLED, NAN_PANIC, INF_PANIC, ANY_PANIC, OPERATIONS, METHODS, ALL, SCOPE_PANIC
     }
 
     /**
-     * This method returns name of the last invoked op
+     * This method returns opName of the last invoked op
      *
      * @return
      */
@@ -79,6 +81,7 @@ public interface OpExecutioner {
      * @param op the operation to execute
      */
     INDArray execAndReturn(TransformOp op);
+
 
 
     /**
@@ -113,6 +116,10 @@ public interface OpExecutioner {
     /** Execute and return the result from a vector op
      * @param op*/
     INDArray execAndReturn(BroadcastOp op);
+
+    /** Execute and return the result from a vector op
+     * @param op*/
+    INDArray execAndReturn(ShapeOp op);
 
 
     /**Execute the operation along 1 or more dimensions
@@ -156,7 +163,9 @@ public interface OpExecutioner {
 
 
 
-    /**Execute and return  a result
+    /**
+     *
+     * Execute and return  a result
      * ndarray from the given op
      * @param op the operation to execute
      * @return the result from the operation
@@ -165,7 +174,7 @@ public interface OpExecutioner {
 
 
     /**Get the execution mode for this
-     * execuioner
+     * executioner
      * @return the execution mode for this executioner
      */
     ExecutionMode executionMode();
@@ -188,8 +197,17 @@ public interface OpExecutioner {
      */
     void exec(GridOp op);
 
-
+    /**
+     *
+     * @param op
+     */
     void exec(Aggregate op);
+
+    /**
+     *
+     * @param op
+     */
+    void exec(ShapeOp op);
 
     /**
      * This method executes previously built batch
@@ -199,7 +217,8 @@ public interface OpExecutioner {
     <T extends Aggregate> void exec(Batch<T> batch);
 
     /**
-     * This method takes abritrary sized list of aggregates, and packs them into batches
+     * This method takes arbitrary sized list of aggregates,
+     * and packs them into batches
      *
      * @param batch
      */
@@ -266,5 +285,104 @@ public interface OpExecutioner {
      * This method ensures all operations that supposed to be executed at this moment, are executed and finished.
      */
     void commit();
+
+    /**
+     * This method encodes array as thresholds, updating input array at the same time
+     *
+     * @param input
+     * @return encoded array is returned
+     */
+    INDArray thresholdEncode(INDArray input, double threshold);
+
+
+    /**
+     * This method encodes array as thresholds, updating input array at the same time
+     *
+     * @param input
+     * @return encoded array is returned
+     */
+    INDArray thresholdEncode(INDArray input, double threshold, Integer boundary);
+
+    /**
+     * This method decodes thresholds array, and puts it into target array
+     *
+     * @param encoded
+     * @param target
+     * @return target is returned
+     */
+    INDArray thresholdDecode(INDArray encoded, INDArray target);
+
+    /**
+     * This method returns number of elements affected by encoder
+     * @param indArray
+     * @param target
+     * @param threshold
+     * @return
+     */
+    long bitmapEncode(INDArray indArray, INDArray target, double threshold);
+
+    /**
+     *
+     * @param indArray
+     * @param threshold
+     * @return
+     */
+    INDArray bitmapEncode(INDArray indArray, double threshold);
+
+    /**
+     *
+     * @param encoded
+     * @param target
+     * @return
+     */
+    INDArray bitmapDecode(INDArray encoded, INDArray target);
+
+    /**
+     * This method returns names of all custom operations available in current backend, and their number of input/output arguments
+     * @return
+     */
+    Map<String, CustomOpDescriptor> getCustomOperations();
+
+    /**
+     * This method executes given CustomOp
+     *
+     * PLEASE NOTE: You're responsible for input/output validation
+     * @param op
+     */
+    void exec(CustomOp op);
+
+    List<int[]> calculateOutputShape(CustomOp op);
+
+
+    void enableDebugMode(boolean reallyEnable);
+
+    void enableVerboseMode(boolean reallyEnable);
+
+
+    void registerGraph(long id, Pointer graph);
+
+    Map<String, INDArray> executeGraph(long id, Map<String, INDArray> map);
+
+    void forgetGraph(long id);
+
+    /**
+     * This method allows to set desired number of elements per thread, for performance optimization purposes.
+     * I.e. if array contains 2048 elements, and threshold is set to 1024, 2 threads will be used for given op execution.
+     *
+     * Default value: 1024
+     *
+     * @param threshold
+     */
+    void setElementsThreshold(int threshold);
+
+    /**
+     * This method allows to set desired number of sub-arrays per thread, for performance optimization purposes.
+     * I.e. if matrix has shape of 64 x 128, and threshold is set to 8, each thread will be processing 8 sub-arrays (sure, if you have 8 core cpu).
+     * If your cpu has, say, 4, cores, only 4 threads will be spawned, and each will process 16 sub-arrays
+     *
+     * Default value: 8
+     * @param threshold
+     */
+    void setTadThreshold(int threshold);
 
 }

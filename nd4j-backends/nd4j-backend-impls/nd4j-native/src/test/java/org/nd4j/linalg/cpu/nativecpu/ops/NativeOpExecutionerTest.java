@@ -22,10 +22,7 @@ import org.nd4j.linalg.api.ops.impl.indexaccum.IAMin;
 import org.nd4j.linalg.api.ops.impl.indexaccum.IMax;
 import org.nd4j.linalg.api.ops.impl.indexaccum.IMin;
 import org.nd4j.linalg.api.ops.impl.scalar.ScalarAdd;
-import org.nd4j.linalg.api.ops.impl.transforms.Exp;
-import org.nd4j.linalg.api.ops.impl.transforms.IsMax;
-import org.nd4j.linalg.api.ops.impl.transforms.SoftMax;
-import org.nd4j.linalg.api.ops.impl.transforms.SoftMaxDerivative;
+import org.nd4j.linalg.api.ops.impl.transforms.*;
 import org.nd4j.linalg.api.ops.impl.transforms.comparison.CompareAndSet;
 import org.nd4j.linalg.exception.ND4JIllegalStateException;
 import org.nd4j.linalg.factory.Nd4j;
@@ -181,8 +178,8 @@ public class NativeOpExecutionerTest {
         INDArray output1T = Nd4j.create(1, 10);
 
         System.out.println("FA --------------------");
-        Nd4j.getExecutioner().exec(new SoftMax(input1, output1));
-        Nd4j.getExecutioner().exec(new SoftMax(input1T, output1T));
+        Nd4j.getExecutioner().exec(new OldSoftMax(input1, output1));
+        Nd4j.getExecutioner().exec(new OldSoftMax(input1T, output1T));
         System.out.println("FB --------------------");
 
         System.out.println("Softmax = " + output1);
@@ -867,10 +864,10 @@ public class NativeOpExecutionerTest {
             long time2 = System.nanoTime();
 
             if (x % 100 == 0)
-                log.info("Concat time: {} us", (time2 - time1) / 1000);
+                log.info("ConcatV2 time: {} us", (time2 - time1) / 1000);
         }
 
-        log.info("Concat tests:");
+        log.info("ConcatV2 tests:");
 
         for (int x = 0; x < embeds.size(); x++) {
             long time1 = System.nanoTime();
@@ -878,7 +875,7 @@ public class NativeOpExecutionerTest {
             long time2 = System.nanoTime();
 
             if (x % 100 == 0)
-             log.info("Concat time: {} us", (time2 - time1) / 1000);
+             log.info("ConcatV2 time: {} us", (time2 - time1) / 1000);
         }
 
     }

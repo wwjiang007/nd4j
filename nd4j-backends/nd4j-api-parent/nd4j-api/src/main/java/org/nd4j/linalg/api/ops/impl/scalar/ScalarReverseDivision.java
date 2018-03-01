@@ -19,10 +19,14 @@
 
 package org.nd4j.linalg.api.ops.impl.scalar;
 
-import org.nd4j.linalg.api.complex.IComplexNumber;
+import org.nd4j.autodiff.samediff.SDVariable;
+import org.nd4j.autodiff.samediff.SameDiff;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.api.ops.BaseScalarOp;
-import org.nd4j.linalg.api.ops.Op;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Scalar reverse division
@@ -41,12 +45,23 @@ public class ScalarReverseDivision extends BaseScalarOp {
         super(x, num);
     }
 
-    public ScalarReverseDivision(INDArray x, INDArray y, INDArray z, long n, IComplexNumber num) {
-        super(x, y, z, n, num);
+
+
+
+    public ScalarReverseDivision(SameDiff sameDiff, SDVariable i_v, Number scalar) {
+        super(sameDiff, i_v, scalar);
     }
 
-    public ScalarReverseDivision(INDArray x, IComplexNumber num) {
-        super(x, num);
+    public ScalarReverseDivision(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace) {
+        super(sameDiff, i_v, scalar, inPlace);
+    }
+
+    public ScalarReverseDivision(SameDiff sameDiff, SDVariable i_v, Number scalar, boolean inPlace, Object[] extraArgs) {
+        super(sameDiff, i_v, scalar, inPlace, extraArgs);
+    }
+
+    public ScalarReverseDivision(SameDiff sameDiff, SDVariable i_v, Number scalar, Object[] extraArgs) {
+        super(sameDiff, i_v, scalar, extraArgs);
     }
 
     @Override
@@ -55,71 +70,28 @@ public class ScalarReverseDivision extends BaseScalarOp {
     }
 
     @Override
-    public String name() {
+    public String opName() {
         return "rdiv_scalar";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, double other) {
-        if (complexNumber != null)
-            return complexNumber.rdiv(origin);
-        return complexNumber.rdiv(num);
+    public String onnxName() {
+        return "RDiv";
     }
 
     @Override
-    public IComplexNumber op(IComplexNumber origin, float other) {
-        if (complexNumber != null)
-            return origin.rdiv(complexNumber);
-        return complexNumber.rdiv(num);
+    public String tensorflowName() {
+        return "RDiv";
     }
 
-    @Override
-    public IComplexNumber op(IComplexNumber origin, IComplexNumber other) {
-        if (complexNumber != null)
-            return origin.div(complexNumber);
-        return complexNumber.rdiv(num);
-    }
+
+
 
     @Override
-    public float op(float origin, float other) {
-        return num.floatValue() / origin;
+    public List<SDVariable> doDiff(List<SDVariable> i_v1) {
+        SDVariable g = f().rdiv(f().pow(arg(),2), -scalarValue.doubleValue()).mul(i_v1.get(0));
+        return Collections.singletonList(g);
     }
 
-    @Override
-    public double op(double origin, double other) {
-        return num.doubleValue() / origin;
-    }
 
-    @Override
-    public double op(double origin) {
-        return num.doubleValue() / origin;
-    }
-
-    @Override
-    public float op(float origin) {
-        return (num.floatValue() / origin);
-    }
-
-    @Override
-    public IComplexNumber op(IComplexNumber origin) {
-        if (complexNumber != null)
-            return origin.rdiv(complexNumber);
-        return complexNumber.rdiv(num);
-    }
-
-    @Override
-    public Op opForDimension(int index, int dimension) {
-        if (num != null)
-            return new ScalarReverseDivision(x.vectorAlongDimension(index, dimension), num);
-        else
-            return new ScalarReverseDivision(x.vectorAlongDimension(index, dimension), complexNumber);
-    }
-
-    @Override
-    public Op opForDimension(int index, int... dimension) {
-        if (num != null)
-            return new ScalarReverseDivision(x.tensorAlongDimension(index, dimension), num);
-        else
-            return new ScalarReverseDivision(x.tensorAlongDimension(index, dimension), complexNumber);
-    }
 }

@@ -32,7 +32,7 @@ public class SgdUpdater implements GradientUpdater<Sgd> {
 
     private final Sgd config;
 
-    public SgdUpdater(Sgd config){
+    public SgdUpdater(Sgd config) {
         this.config = config;
     }
 
@@ -42,7 +42,8 @@ public class SgdUpdater implements GradientUpdater<Sgd> {
     }
 
     @Override
-    public void applyUpdater(INDArray gradient, int iteration) {
-        gradient.muli(config.getLearningRate());
+    public void applyUpdater(INDArray gradient, int iteration, int epoch) {
+        double lr = config.getLearningRate(iteration, epoch);
+        gradient.muli(lr);
     }
 }
